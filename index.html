@@ -161,6 +161,19 @@
     }
     #packetOutput { min-height: 85px; }
     .meta { font-size: 13px; opacity: .95; }
+    #moveList {
+      min-height: 70px;
+      max-height: 120px;
+      overflow: auto;
+      border: 1px solid #2f2f2f;
+      border-radius: 8px;
+      background: #111114;
+      padding: 8px;
+      font-size: 12px;
+      line-height: 1.35;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
     .section { border-top: 1px solid #2b2b2b; padding-top: 10px; }
   </style>
 </head>
@@ -180,6 +193,8 @@
         <button id="flipBtn">Flip Board</button>
       </div>
       <div class="meta" id="status"></div>
+      <label for="moveList">Move List</label>
+      <div id="moveList">No moves yet.</div>
 
       <label for="fenInput">Position (FEN)</label>
       <textarea id="fenInput" spellcheck="false"></textarea>
@@ -255,6 +270,7 @@
     const fenInputEl = document.getElementById('fenInput');
     const lessonBoxEl = document.getElementById('lessonBox');
     const packetOutputEl = document.getElementById('packetOutput');
+    const moveListEl = document.getElementById('moveList');
     const lessonPackSelectEl = document.getElementById('lessonPackSelect');
     const lessonSelectEl = document.getElementById('lessonSelect');
     const coordsTopEl = document.getElementById('coordsTop');
@@ -655,6 +671,40 @@
       return S.turn === constraints.userSide;
     }
 
+    function formatMoveLogEntry(coordMove, movedSide, moveNumber) {
+      // Use the side that moved before turn is toggled so prefixes are always correct.
+      return movedSide === 'w' ? `${moveNumber}. ${coordMove}` : `… ${coordMove}`;
+    }
+
+    function buildMoveRows(entries) {
+      const rows = [];
+      let currentWhite = '';
+
+      for (const entry of entries) {
+        if (/^\d+\.\s/.test(entry)) {
+          if (currentWhite) rows.push(currentWhite);
+          currentWhite = entry;
+          continue;
+        }
+
+        if (entry.startsWith('… ')) {
+          if (currentWhite) {
+            rows.push(`${currentWhite} ${entry}`);
+            currentWhite = '';
+          } else {
+            rows.push(entry);
+          }
+          continue;
+        }
+
+        if (currentWhite) rows.push(currentWhite);
+        currentWhite = entry;
+      }
+
+      if (currentWhite) rows.push(currentWhite);
+      return rows;
+    }
+
     function makeMove(m, { bypassLessonValidation = false } = {}) {
       const coordMove = moveToCoordString(m);
       if (!bypassLessonValidation && TRAIN.active && TRAIN.lesson) {
@@ -687,15 +737,20 @@
         }
       }
 
+      const movedSide = S.turn;
+      const moveNumber = S.fullmove;
+
       S.history.push({
         snapshot: cloneState(),
         lessonStep: TRAIN.stepIndex,
         lessonLastAttempt: TRAIN.lastAttempt,
         lessonMessage: TRAIN.message
       });
+
+      // Build the log entry from pre-move state so White/Black prefixes never flip.
+      const logEntry = formatMoveLogEntry(coordMove, movedSide, moveNumber);
+      S.moveLog.push(logEntry);
       applyMoveOnBoard(S, m);
-      const prefix = S.turn === 'b' ? '' : '...';
-      S.moveLog.push(`${prefix}${coordMove}`);
       selection = null;
       legalForSelection = [];
       updateLessonBox();
@@ -1003,6 +1058,8 @@
       const castling = ['K','Q','k','q'].filter((k) => S.castling[k]).join('') || '-';
       const mode = TRAIN.active && TRAIN.lesson ? ` • Lesson: ${TRAIN.lesson.id}` : '';
       statusEl.textContent = `${S.turn === 'w' ? 'White' : 'Black'} to move • Castling: ${castling} • EP: ${S.ep}${mode}`;
+      const moveRows = buildMoveRows(S.moveLog);
+      moveListEl.textContent = moveRows.length ? moveRows.join('\n') : 'No moves yet.';
       fenInputEl.value = boardToFEN();
     }
 
