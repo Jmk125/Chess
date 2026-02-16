@@ -1,0 +1,78 @@
+[
+  {
+    "id": "mate_001",
+    "title": "Back Rank Mate",
+    "type": "puzzle",
+    "fen": "6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Deliver immediate back-rank checkmate.",
+    "hint": "The rook can invade the 8th rank with check.",
+    "tips": [
+      "Look at the black king's escape squares.",
+      "If the flight squares are blocked by its own pawns, mating nets are near."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["f1"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["f1f8"],
+      "san": ["Rf8#"],
+      "explanation": [
+        "Rf8 is checkmate because the king has no legal escapes.",
+        "Back-rank weaknesses are fatal when heavy pieces invade."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "f1f8",
+        "message": "Excellent — back-rank mate delivered."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a forcing rook check on the back rank."
+      }
+    ]
+  },
+  {
+    "id": "endgame_001",
+    "title": "Endgame: Promote the Passed Pawn",
+    "type": "puzzle",
+    "fen": "6k1/4P3/4K3/8/8/8/8/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Promote the passed pawn immediately.",
+    "hint": "The pawn on e7 is one step away from queening.",
+    "tips": [
+      "Passed pawns should be pushed when safe.",
+      "Promotion is often stronger than checking maneuvers in simple endings."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e7"],
+      "restrictPieceTypes": ["P"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["e7e8Q"],
+      "san": ["e8=Q"],
+      "explanation": [
+        "Promotion creates a queen and a decisive material advantage.",
+        "Always evaluate if immediate promotion is legal and strongest."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e7e8Q",
+        "message": "Perfect — pawn promoted."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "In this puzzle, focus on promoting the passed pawn."
+      }
+    ]
+  }
+]
