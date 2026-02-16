@@ -118,8 +118,10 @@
       gap: 10px;
       width: 320px;
     }
-    .panel h2 { margin: 0 0 2px; font-size: 18px; }
+    .panel h2, .panel h3 { margin: 0 0 2px; font-size: 18px; }
+    .panel h3 { font-size: 15px; }
     .btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .btns.one-col { grid-template-columns: 1fr; }
     button {
       border: 1px solid #3a3a3a;
       background: #232325;
@@ -131,10 +133,9 @@
     }
     button:hover { border-color: var(--accent); }
     label { font-size: 13px; opacity: .95; font-weight: 600; }
+    select,
     textarea {
       width: 100%;
-      min-height: 95px;
-      resize: vertical;
       border-radius: 8px;
       border: 1px solid #3a3a3a;
       background: #111114;
@@ -143,16 +144,24 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
     }
+    select { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    textarea {
+      min-height: 95px;
+      resize: vertical;
+    }
     #lessonBox {
-      min-height: 52px;
+      min-height: 70px;
       border: 1px solid #2f2f2f;
       border-radius: 8px;
       background: #111114;
       padding: 8px;
       font-size: 13px;
       line-height: 1.35;
+      white-space: pre-wrap;
     }
+    #packetOutput { min-height: 85px; }
     .meta { font-size: 13px; opacity: .95; }
+    .section { border-top: 1px solid #2b2b2b; padding-top: 10px; }
   </style>
 </head>
 <body>
@@ -178,28 +187,37 @@
         <button id="loadFenBtn">Load FEN</button>
         <button id="copyFenBtn">Copy Current FEN</button>
       </div>
-      <button id="sampleLessonBtn">Load Sample Lesson</button>
 
+      <div class="section">
+        <h3>Lessons</h3>
+        <label for="lessonSelect">Lesson</label>
+        <select id="lessonSelect"></select>
+        <div class="btns">
+          <button id="loadLessonBtn">Load Lesson</button>
+          <button id="resetLessonBtn">Reset Lesson</button>
+          <button id="showHintBtn">Show Hint</button>
+          <button id="showSolutionBtn">Show Solution</button>
+        </div>
+        <div class="btns one-col">
+          <button id="copyPacketBtn">Copy Coaching Packet</button>
+        </div>
+      </div>
+
+      <label for="lessonBox">Lesson / Tips</label>
       <div id="lessonBox">No lesson loaded.</div>
+      <label for="packetOutput">Coaching Packet</label>
+      <textarea id="packetOutput" readonly spellcheck="false" placeholder="Packet will appear here when copied."></textarea>
     </aside>
   </div>
 
   <script>
     const FILES = ['a','b','c','d','e','f','g','h'];
     const START_FEN = 'rn1qkbnr/pppb1ppp/3pp3/8/2BP4/5N2/PPP2PPP/RNBQ1RK1 w kq - 0 6';
+    const LESSONS_PATH = 'lessons/lessons.json';
     const PIECE_UNICODE = {
       K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',
       k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'
     };
-
-    const LESSONS = [
-      {
-        name: 'Back-rank Mate Basics',
-        fen: '6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1',
-        goal: 'Goal: Deliver checkmate on the back rank using your rook.',
-        hint: 'Hint: Restrict king escape squares first, then force mate with the rook.'
-      }
-    ];
 
     const S = {
       board: createEmptyBoard(),
@@ -209,9 +227,19 @@
       halfmove: 0,
       fullmove: 1,
       flipped: false,
-      history: []
+      history: [],
+      moveLog: []
     };
 
+    const TRAIN = {
+      active: false,
+      lesson: null,
+      stepIndex: 0,
+      lastAttempt: null,
+      message: ''
+    };
+
+    let LESSONS = [];
     let selection = null;
     let legalForSelection = [];
 
@@ -219,6 +247,8 @@
     const statusEl = document.getElementById('status');
     const fenInputEl = document.getElementById('fenInput');
     const lessonBoxEl = document.getElementById('lessonBox');
+    const packetOutputEl = document.getElementById('packetOutput');
+    const lessonSelectEl = document.getElementById('lessonSelect');
     const coordsTopEl = document.getElementById('coordsTop');
     const coordsLeftEl = document.getElementById('coordsLeft');
     const coordsRightEl = document.getElementById('coordsRight');
@@ -241,6 +271,29 @@
     }
 
     function pieceColor(piece) { return piece === piece.toUpperCase() ? 'w' : 'b'; }
+    function moveToCoordString(m) {
+      const promotion = m.promotion ? m.promotion.toUpperCase() : '';
+      return `${coordsToSquare(m.from.r, m.from.c)}${coordsToSquare(m.to.r, m.to.c)}${promotion}`;
+    }
+
+    function lessonResponseForMove(coordMove) {
+      if (!TRAIN.lesson || !Array.isArray(TRAIN.lesson.responses)) return '';
+      const direct = TRAIN.lesson.responses.find((r) => r.ifUserMove === coordMove);
+      if (direct) return direct.message;
+      const fallback = TRAIN.lesson.responses.find((r) => r.ifUserMove === '*');
+      return fallback ? fallback.message : '';
+    }
+
+    function normalizeConstraints(lesson) {
+      const base = {
+        userSide: 'both',
+        lockOtherSide: false,
+        restrictFromSquares: [],
+        restrictPieceTypes: [],
+        enforceOnlyAllowedMoves: false
+      };
+      return Object.assign(base, lesson.constraints || {});
+    }
 
     function parseFEN(fen) {
       const parts = fen.trim().split(/\s+/);
@@ -307,7 +360,8 @@
         castling: S.castling,
         ep: S.ep,
         halfmove: S.halfmove,
-        fullmove: S.fullmove
+        fullmove: S.fullmove,
+        moveLog: S.moveLog
       }));
     }
 
@@ -318,6 +372,7 @@
       S.ep = snapshot.ep;
       S.halfmove = snapshot.halfmove;
       S.fullmove = snapshot.fullmove;
+      S.moveLog = snapshot.moveLog || [];
       selection = null;
       legalForSelection = [];
       render();
@@ -334,7 +389,8 @@
     function isSquareAttacked(board, tr, tc, byColor) {
       const pawnDir = byColor === 'w' ? -1 : 1;
       for (const dc of [-1,1]) {
-        const r = tr - pawnDir, c = tc + dc;
+        const r = tr - pawnDir;
+        const c = tc + dc;
         if (inBounds(r,c)) {
           const p = board[r][c];
           if (p && pieceColor(p) === byColor && p.toLowerCase() === 'p') return true;
@@ -348,8 +404,8 @@
         if (p && pieceColor(p) === byColor && p.toLowerCase() === 'n') return true;
       }
       const lines = [
-        {dirs:[[-1,0],[1,0],[0,-1],[0,1]], pieces:['r','q']},
-        {dirs:[[-1,-1],[-1,1],[1,-1],[1,1]], pieces:['b','q']}
+        { dirs:[[-1,0],[1,0],[0,-1],[0,1]], pieces:['r','q'] },
+        { dirs:[[-1,-1],[-1,1],[1,-1],[1,1]], pieces:['b','q'] }
       ];
       for (const group of lines) {
         for (const [dr,dc] of group.dirs) {
@@ -360,16 +416,19 @@
               if (pieceColor(p) === byColor && group.pieces.includes(p.toLowerCase())) return true;
               break;
             }
-            r += dr; c += dc;
+            r += dr;
+            c += dc;
           }
         }
       }
-      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-        if (!dr && !dc) continue;
-        const r = tr + dr, c = tc + dc;
-        if (!inBounds(r,c)) continue;
-        const p = board[r][c];
-        if (p && pieceColor(p) === byColor && p.toLowerCase() === 'k') return true;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const r = tr + dr, c = tc + dc;
+          if (!inBounds(r,c)) continue;
+          const p = board[r][c];
+          if (p && pieceColor(p) === byColor && p.toLowerCase() === 'k') return true;
+        }
       }
       return false;
     }
@@ -417,8 +476,14 @@
         }
       }
 
-      if (piece === 'P' && m.to.r === 0) b[m.to.r][m.to.c] = 'Q';
-      if (piece === 'p' && m.to.r === 7) b[m.to.r][m.to.c] = 'q';
+      if (piece === 'P' && m.to.r === 0) {
+        const promo = m.promotion ? m.promotion.toUpperCase() : 'Q';
+        b[m.to.r][m.to.c] = promo;
+      }
+      if (piece === 'p' && m.to.r === 7) {
+        const promo = m.promotion ? m.promotion.toLowerCase() : 'q';
+        b[m.to.r][m.to.c] = promo;
+      }
 
       if (piece.toLowerCase() === 'p' && Math.abs(m.to.r - m.from.r) === 2) {
         state.ep = coordsToSquare((m.to.r + m.from.r) / 2, m.from.c);
@@ -426,8 +491,8 @@
         state.ep = '-';
       }
 
-      if (state.turn === 'b') state.fullmove += 1;
       state.turn = state.turn === 'w' ? 'b' : 'w';
+      if (state.turn === 'w') state.fullmove += 1;
     }
 
     function pseudoMovesFor(board, r, c, state) {
@@ -440,12 +505,12 @@
 
       if (lower === 'p') {
         const dir = color === 'w' ? -1 : 1;
-        const startRank = color === 'w' ? 6 : 1;
+        const home = color === 'w' ? 6 : 1;
         const one = r + dir;
-        if (inBounds(one,c) && !board[one][c]) {
+        if (inBounds(one, c) && !board[one][c]) {
           moves.push({ from:{r,c}, to:{r:one,c} });
           const two = r + dir * 2;
-          if (r === startRank && !board[two][c]) moves.push({ from:{r,c}, to:{r:two,c} });
+          if (r === home && !board[two][c]) moves.push({ from:{r,c}, to:{r:two,c} });
         }
         for (const dc of [-1,1]) {
           const tr = r + dir, tc = c + dc;
@@ -482,18 +547,21 @@
               if (pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
               break;
             }
-            tr += dr; tc += dc;
+            tr += dr;
+            tc += dc;
           }
         }
       }
 
       if (lower === 'k') {
-        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-          if (!dr && !dc) continue;
-          const tr = r + dr, tc = c + dc;
-          if (!inBounds(tr,tc)) continue;
-          const t = board[tr][tc];
-          if (!t || pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (!dr && !dc) continue;
+            const tr = r + dr, tc = c + dc;
+            if (!inBounds(tr,tc)) continue;
+            const t = board[tr][tc];
+            if (!t || pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+          }
         }
 
         const homeRank = color === 'w' ? 7 : 0;
@@ -516,11 +584,38 @@
       return moves;
     }
 
+    function filterMovesByLesson(moves) {
+      if (!TRAIN.active || !TRAIN.lesson) return moves;
+      const constraints = normalizeConstraints(TRAIN.lesson);
+      const fromSet = new Set((constraints.restrictFromSquares || []).map((sq) => sq.toLowerCase()));
+      const typeSet = new Set((constraints.restrictPieceTypes || []).map((p) => p.toUpperCase()));
+      const expectedMove = TRAIN.lesson.solution && TRAIN.lesson.solution.moves ? TRAIN.lesson.solution.moves[TRAIN.stepIndex] : null;
+
+      return moves.filter((m) => {
+        const moverPiece = S.board[m.from.r][m.from.c];
+        const moverColor = pieceColor(moverPiece);
+        const fromSq = coordsToSquare(m.from.r, m.from.c).toLowerCase();
+        const pieceType = moverPiece.toUpperCase();
+        const coordMove = moveToCoordString(m);
+
+        if (constraints.lockOtherSide) {
+          if (constraints.userSide === 'w' && moverColor !== 'w') return false;
+          if (constraints.userSide === 'b' && moverColor !== 'b') return false;
+        }
+        if (fromSet.size && !fromSet.has(fromSq)) return false;
+        if (typeSet.size && !typeSet.has(pieceType)) return false;
+        if (constraints.enforceOnlyAllowedMoves && expectedMove) {
+          return coordMove.toLowerCase() === expectedMove.toLowerCase();
+        }
+        return true;
+      });
+    }
+
     function legalMovesFor(r, c) {
       const piece = S.board[r][c];
       if (!piece || pieceColor(piece) !== S.turn) return [];
       const pseudos = pseudoMovesFor(S.board, r, c, S);
-      return pseudos.filter((m) => {
+      const legal = pseudos.filter((m) => {
         const test = JSON.parse(JSON.stringify({
           board: S.board,
           turn: S.turn,
@@ -532,21 +627,79 @@
         applyMoveOnBoard(test, m);
         return !inCheck(test.board, S.turn);
       });
+      return filterMovesByLesson(legal);
     }
 
-    function makeMove(m) {
-      S.history.push(cloneState());
+    function validateTurnForLesson() {
+      if (!TRAIN.active || !TRAIN.lesson) return true;
+      const constraints = normalizeConstraints(TRAIN.lesson);
+      if (!constraints.lockOtherSide) return true;
+      if (constraints.userSide === 'both') return true;
+      return S.turn === constraints.userSide;
+    }
+
+    function makeMove(m, { bypassLessonValidation = false } = {}) {
+      const coordMove = moveToCoordString(m);
+      if (!bypassLessonValidation && TRAIN.active && TRAIN.lesson) {
+        TRAIN.lastAttempt = coordMove;
+        const constraints = normalizeConstraints(TRAIN.lesson);
+        const solutionMoves = TRAIN.lesson.solution && TRAIN.lesson.solution.moves ? TRAIN.lesson.solution.moves : [];
+        const expectedMove = solutionMoves[TRAIN.stepIndex];
+        const responseMessage = lessonResponseForMove(coordMove);
+        const matchesExpected = expectedMove && coordMove.toLowerCase() === expectedMove.toLowerCase();
+
+        if (constraints.enforceOnlyAllowedMoves && expectedMove && !matchesExpected) {
+          TRAIN.message = responseMessage || 'Not quite. This lesson is in strict mode, so only the target move is allowed.';
+          updateLessonBox();
+          return false;
+        }
+
+        if (expectedMove) {
+          if (matchesExpected) {
+            TRAIN.stepIndex += 1;
+            if (TRAIN.stepIndex >= solutionMoves.length) {
+              TRAIN.message = `${responseMessage || 'Correct move!'} Lesson complete.`;
+            } else {
+              TRAIN.message = responseMessage || 'Correct. Keep going!';
+            }
+          } else {
+            TRAIN.message = responseMessage || 'Move played. Compare it with the lesson goal and try improving it.';
+          }
+        } else {
+          TRAIN.message = responseMessage || 'Move played.';
+        }
+      }
+
+      S.history.push({
+        snapshot: cloneState(),
+        lessonStep: TRAIN.stepIndex,
+        lessonLastAttempt: TRAIN.lastAttempt,
+        lessonMessage: TRAIN.message
+      });
       applyMoveOnBoard(S, m);
+      const prefix = S.turn === 'b' ? '' : '...';
+      S.moveLog.push(`${prefix}${coordMove}`);
       selection = null;
       legalForSelection = [];
+      updateLessonBox();
       render();
+      return true;
     }
 
     function handleSquareClick(r, c) {
       const piece = S.board[r][c];
+      if (!validateTurnForLesson()) {
+        TRAIN.message = 'This lesson restricts you to the other side.';
+        updateLessonBox();
+        return;
+      }
+
       if (selection) {
         const found = legalForSelection.find((m) => m.to.r === r && m.to.c === c);
-        if (found) { makeMove(found); return; }
+        if (found) {
+          makeMove(found);
+          return;
+        }
       }
       if (piece && pieceColor(piece) === S.turn) {
         selection = { r, c };
@@ -575,6 +728,7 @@
         S.halfmove = parsed.halfmove;
         S.fullmove = parsed.fullmove;
         S.history = [];
+        S.moveLog = [];
         selection = null;
         legalForSelection = [];
         render();
@@ -591,27 +745,134 @@
           await navigator.clipboard.writeText(fen);
         }
       } catch (_) {
-        // no-op: keep value in textarea even when clipboard is unavailable.
+        // no-op
       }
     }
 
-    function displayLesson(lesson) {
-      lessonBoxEl.innerHTML = `<strong>${lesson.name}</strong><br>${lesson.goal}<br>${lesson.hint}`;
+    function updateLessonBox(extra = '') {
+      if (!TRAIN.active || !TRAIN.lesson) {
+        lessonBoxEl.textContent = extra || 'No lesson loaded.';
+        return;
+      }
+      const lesson = TRAIN.lesson;
+      const tips = Array.isArray(lesson.tips) && lesson.tips.length ? `Tips:\n- ${lesson.tips.join('\n- ')}` : '';
+      const progressTotal = lesson.solution && lesson.solution.moves ? lesson.solution.moves.length : 0;
+      const progress = progressTotal ? `Progress: ${TRAIN.stepIndex}/${progressTotal}` : 'Progress: free play';
+      const parts = [
+        `Lesson: ${lesson.title}`,
+        `Goal: ${lesson.goal}`,
+        tips,
+        progress,
+        TRAIN.message ? `Message: ${TRAIN.message}` : '',
+        extra
+      ].filter(Boolean);
+      lessonBoxEl.textContent = parts.join('\n\n');
     }
 
-    function loadSampleLesson() {
-      const lesson = LESSONS[0];
+    async function loadLessonsData() {
+      const res = await fetch(`${LESSONS_PATH}?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`Could not fetch lessons JSON (${res.status}).`);
+      const data = await res.json();
+      LESSONS = Array.isArray(data) ? data : [];
+      lessonSelectEl.innerHTML = LESSONS.map((lesson) => `<option value="${lesson.id}">${lesson.title}</option>`).join('');
+      if (!LESSONS.length) lessonSelectEl.innerHTML = '<option value="">No lessons found</option>';
+    }
+
+    function findSelectedLesson() {
+      const id = lessonSelectEl.value;
+      return LESSONS.find((lesson) => lesson.id === id) || null;
+    }
+
+    function resetLessonStateMeta() {
+      TRAIN.stepIndex = 0;
+      TRAIN.lastAttempt = null;
+      TRAIN.message = '';
+    }
+
+    function loadLesson() {
+      const lesson = findSelectedLesson();
       if (!lesson) return;
-      fenInputEl.value = lesson.fen;
+      TRAIN.active = true;
+      TRAIN.lesson = lesson;
+      resetLessonStateMeta();
       loadFEN(lesson.fen);
-      displayLesson(lesson);
-      alert(`${lesson.name}\n\n${lesson.goal}\n${lesson.hint}`);
+      if (lesson.sideToMove && lesson.sideToMove !== S.turn) {
+        TRAIN.message = `Warning: lesson sideToMove is ${lesson.sideToMove} but FEN has ${S.turn}.`;
+      }
+      selection = null;
+      legalForSelection = [];
+      updateLessonBox();
+      render();
+    }
+
+    function resetCurrentLesson() {
+      if (!TRAIN.active || !TRAIN.lesson) return;
+      resetLessonStateMeta();
+      loadFEN(TRAIN.lesson.fen);
+      updateLessonBox('Lesson reset to starting position.');
+      render();
+    }
+
+    function showHint() {
+      if (!TRAIN.active || !TRAIN.lesson) {
+        updateLessonBox('Load a lesson first.');
+        return;
+      }
+      updateLessonBox(`Hint: ${TRAIN.lesson.hint || 'No hint provided for this lesson.'}`);
+    }
+
+    function showSolution() {
+      if (!TRAIN.active || !TRAIN.lesson) {
+        updateLessonBox('Load a lesson first.');
+        return;
+      }
+      const sol = TRAIN.lesson.solution || {};
+      const line = Array.isArray(sol.san) && sol.san.length ? sol.san.join(' ') : (sol.moves || []).join(' ');
+      const explanation = Array.isArray(sol.explanation) && sol.explanation.length ? `Explanation:\n- ${sol.explanation.join('\n- ')}` : '';
+      updateLessonBox(`Solution: ${line || 'No solution line supplied.'}\n${explanation}`);
+    }
+
+    function exitLessonMode(message = '') {
+      TRAIN.active = false;
+      TRAIN.lesson = null;
+      TRAIN.stepIndex = 0;
+      TRAIN.lastAttempt = null;
+      TRAIN.message = '';
+      updateLessonBox(message || 'No lesson loaded.');
+    }
+
+    function buildCoachingPacket() {
+      return {
+        fen: boardToFEN(),
+        turn: S.turn,
+        history: [...S.moveLog],
+        lesson: TRAIN.active && TRAIN.lesson ? TRAIN.lesson.id : null,
+        lessonStep: TRAIN.active ? TRAIN.stepIndex : null,
+        constraints: TRAIN.active && TRAIN.lesson ? normalizeConstraints(TRAIN.lesson) : null,
+        lastAttempt: TRAIN.lastAttempt,
+        message: TRAIN.message,
+        lessonMode: TRAIN.active
+      };
+    }
+
+    async function copyCoachingPacket() {
+      const packet = buildCoachingPacket();
+      const payload = JSON.stringify(packet);
+      packetOutputEl.value = payload;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(payload);
+        }
+      } catch (_) {
+        // textarea fallback is already populated.
+      }
+      TRAIN.message = 'Coaching packet copied (and shown below).';
+      updateLessonBox();
     }
 
     function renderCoordinateFrame() {
       const files = S.flipped ? [...FILES].reverse() : [...FILES];
       const ranks = S.flipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
-
       coordsTopEl.innerHTML = files.map((f) => `<span>${f}</span>`).join('');
       coordsBottomEl.innerHTML = files.map((f) => `<span>${f}</span>`).join('');
       coordsLeftEl.innerHTML = ranks.map((r) => `<span>${r}</span>`).join('');
@@ -644,21 +905,25 @@
           }
           if (inChk && checkSq && checkSq.r === r && checkSq.c === c) sq.classList.add('check');
 
-
           sq.addEventListener('click', () => handleSquareClick(r, c));
           boardEl.appendChild(sq);
         }
       }
 
       const castling = ['K','Q','k','q'].filter((k) => S.castling[k]).join('') || '-';
-      statusEl.textContent = `${S.turn === 'w' ? 'White' : 'Black'} to move • Castling: ${castling} • EP: ${S.ep}`;
+      const mode = TRAIN.active && TRAIN.lesson ? ` • Lesson: ${TRAIN.lesson.id}` : '';
+      statusEl.textContent = `${S.turn === 'w' ? 'White' : 'Black'} to move • Castling: ${castling} • EP: ${S.ep}${mode}`;
       fenInputEl.value = boardToFEN();
     }
 
     document.getElementById('undoBtn').addEventListener('click', () => {
       if (!S.history.length) return;
       const prev = S.history.pop();
-      restoreState(prev);
+      restoreState(prev.snapshot);
+      TRAIN.stepIndex = prev.lessonStep;
+      TRAIN.lastAttempt = prev.lessonLastAttempt;
+      TRAIN.message = prev.lessonMessage;
+      updateLessonBox('Undid last move.');
     });
 
     document.getElementById('flipBtn').addEventListener('click', () => {
@@ -666,12 +931,22 @@
       render();
     });
 
-    document.getElementById('loadFenBtn').addEventListener('click', () => loadFEN(fenInputEl.value));
+    document.getElementById('loadFenBtn').addEventListener('click', () => {
+      loadFEN(fenInputEl.value);
+      exitLessonMode('Lesson mode exited after manual FEN load.');
+    });
     document.getElementById('copyFenBtn').addEventListener('click', copyCurrentFEN);
-    document.getElementById('sampleLessonBtn').addEventListener('click', loadSampleLesson);
+    document.getElementById('loadLessonBtn').addEventListener('click', loadLesson);
+    document.getElementById('resetLessonBtn').addEventListener('click', resetCurrentLesson);
+    document.getElementById('showHintBtn').addEventListener('click', showHint);
+    document.getElementById('showSolutionBtn').addEventListener('click', showSolution);
+    document.getElementById('copyPacketBtn').addEventListener('click', copyCoachingPacket);
 
     loadFEN(START_FEN);
-    displayLesson({ name: 'Tip', goal: 'Load a lesson to see teaching text.', hint: 'Use Load Sample Lesson.' });
+    updateLessonBox('Loading lessons...');
+    loadLessonsData()
+      .then(() => updateLessonBox('No lesson loaded. Pick a lesson and click Load Lesson.'))
+      .catch((err) => updateLessonBox(`Could not load lessons JSON: ${err.message}`));
   </script>
 </body>
 </html>

@@ -1,0 +1,226 @@
+[
+  {
+    "id": "fork_001",
+    "title": "Knight Fork – Win the Queen",
+    "type": "puzzle",
+    "fen": "2k5/2q5/4N3/8/8/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Find the forcing knight fork that wins the queen.",
+    "hint": "Look for a checking knight move that also attacks the queen.",
+    "tips": [
+      "Checks are forcing moves.",
+      "Knight forks often target king and queen together."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e6"],
+      "restrictPieceTypes": ["N"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["e6c7"],
+      "san": ["Nc7+"],
+      "explanation": [
+        "Nc7+ checks the king and attacks the queen at the same time.",
+        "After the king responds, White can capture the queen."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e6c7",
+        "message": "Correct! This is the classic knight fork."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Not quite. Search for a checking knight jump that hits the queen."
+      }
+    ]
+  },
+  {
+    "id": "pin_001",
+    "title": "Absolute Pin – Illegal Knight Move",
+    "type": "demo",
+    "fen": "4k3/8/8/8/8/8/4n3/4K2R b K - 0 1",
+    "sideToMove": "b",
+    "goal": "Observe how the pinned knight on e2 cannot legally move because it exposes the king.",
+    "hint": "Try selecting the knight and compare legal markers with your expectation.",
+    "tips": [
+      "A piece is absolutely pinned if moving it would leave the king in check.",
+      "Legal move generation automatically removes moves that expose your king."
+    ],
+    "constraints": {
+      "userSide": "b",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": [],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e8d7"],
+      "san": ["Kd7"],
+      "explanation": [
+        "Black should move the king instead of the pinned knight.",
+        "After the king moves, the pin no longer applies."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e8d7",
+        "message": "Good. King movement breaks the pin setup."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Demo mode: keep exploring legal options and note the pinned knight behavior."
+      }
+    ]
+  },
+  {
+    "id": "mate_001",
+    "title": "Back Rank Mate",
+    "type": "puzzle",
+    "fen": "6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Deliver immediate back-rank checkmate.",
+    "hint": "The rook can invade the 8th rank with check.",
+    "tips": [
+      "Look at the black king's escape squares.",
+      "If the flight squares are blocked by its own pawns, mating nets are near."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["f1"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["f1f8"],
+      "san": ["Rf8#"],
+      "explanation": [
+        "Rf8 is checkmate because the king has no legal escapes.",
+        "Back-rank weaknesses are fatal when heavy pieces invade."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "f1f8",
+        "message": "Excellent — back-rank mate delivered."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a forcing rook check on the back rank."
+      }
+    ]
+  },
+  {
+    "id": "skewer_001",
+    "title": "Skewer",
+    "type": "puzzle",
+    "fen": "6k1/8/8/8/8/8/6R1/6Kq w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Skewer the king and win the queen.",
+    "hint": "Find a rook check that attacks through the king to the queen.",
+    "tips": [
+      "In a skewer, the more valuable piece moves away first.",
+      "Line pieces (rook, bishop, queen) create skewers."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["g2"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["g2g8"],
+      "san": ["Rg8+"],
+      "explanation": [
+        "The king must move, revealing the queen behind it.",
+        "White wins material after the king sidesteps."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g2g8",
+        "message": "Correct. That's the skewer pattern."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Look for a checking rook move on the g-file."
+      }
+    ]
+  },
+  {
+    "id": "discovered_001",
+    "title": "Discovered Attack",
+    "type": "demo",
+    "fen": "4k3/8/8/8/8/8/4N3/4R1qK w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Move the knight to discover a rook attack on the queen.",
+    "hint": "Any legal knight move from e2 opens the rook's line to g1.",
+    "tips": [
+      "A discovered attack happens when one piece moves and reveals another attack.",
+      "You can gain tempo if the discovered line also gives check."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e2"],
+      "restrictPieceTypes": ["N"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e2c3"],
+      "san": ["Nc3"],
+      "explanation": [
+        "Moving the knight opens the rook's path from e1 to g1.",
+        "Black's queen becomes exposed to capture threats."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice exploration. Notice how the rook line changes after the knight moves."
+      }
+    ]
+  },
+  {
+    "id": "endgame_001",
+    "title": "Endgame: Promote the Passed Pawn",
+    "type": "puzzle",
+    "fen": "6k1/4P3/4K3/8/8/8/8/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Promote the passed pawn immediately.",
+    "hint": "The pawn on e7 is one step away from queening.",
+    "tips": [
+      "Passed pawns should be pushed when safe.",
+      "Promotion is often stronger than checking maneuvers in simple endings."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e7"],
+      "restrictPieceTypes": ["P"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["e7e8Q"],
+      "san": ["e8=Q"],
+      "explanation": [
+        "Promotion creates a queen and a decisive material advantage.",
+        "Always evaluate if immediate promotion is legal and strongest."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e7e8Q",
+        "message": "Perfect — pawn promoted."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "In this puzzle, focus on promoting the passed pawn."
+      }
+    ]
+  }
+]
