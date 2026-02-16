@@ -190,6 +190,8 @@
 
       <div class="section">
         <h3>Lessons</h3>
+        <label for="lessonPackSelect">Lesson Pack</label>
+        <select id="lessonPackSelect"></select>
         <label for="lessonSelect">Lesson</label>
         <select id="lessonSelect"></select>
         <div class="btns">
@@ -213,7 +215,8 @@
   <script>
     const FILES = ['a','b','c','d','e','f','g','h'];
     const START_FEN = 'rn1qkbnr/pppb1ppp/3pp3/8/2BP4/5N2/PPP2PPP/RNBQ1RK1 w kq - 0 6';
-    const LESSONS_PATH = 'lessons/lessons.json';
+    const LESSONS_INDEX_PATH = 'lessons/index.json';
+    const LEGACY_LESSONS_PATH = 'lessons/lessons.json';
     const PIECE_UNICODE = {
       K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',
       k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'
@@ -240,6 +243,10 @@
     };
 
     let LESSONS = [];
+    let LESSON_PACKS = [];
+    const PACK_CACHE = new Map();
+    let ACTIVE_PACK_ID = null;
+    let ACTIVE_PACK_TITLE = '';
     let selection = null;
     let legalForSelection = [];
 
@@ -248,11 +255,21 @@
     const fenInputEl = document.getElementById('fenInput');
     const lessonBoxEl = document.getElementById('lessonBox');
     const packetOutputEl = document.getElementById('packetOutput');
+    const lessonPackSelectEl = document.getElementById('lessonPackSelect');
     const lessonSelectEl = document.getElementById('lessonSelect');
     const coordsTopEl = document.getElementById('coordsTop');
     const coordsLeftEl = document.getElementById('coordsLeft');
     const coordsRightEl = document.getElementById('coordsRight');
     const coordsBottomEl = document.getElementById('coordsBottom');
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('\"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
 
     function createEmptyBoard() {
       return Array.from({ length: 8 }, () => Array(8).fill(''));
@@ -750,16 +767,27 @@
     }
 
     function updateLessonBox(extra = '') {
+      const loadedPack = ACTIVE_PACK_ID
+        ? `Loaded pack: ${ACTIVE_PACK_TITLE || ACTIVE_PACK_ID} (${LESSONS.length} lessons)`
+        : 'Loaded pack: none';
+
       if (!TRAIN.active || !TRAIN.lesson) {
-        lessonBoxEl.textContent = extra || 'No lesson loaded.';
+        lessonBoxEl.textContent = [
+          loadedPack,
+          extra || 'No lesson loaded.'
+        ].filter(Boolean).join('\n\n');
         return;
       }
       const lesson = TRAIN.lesson;
       const tips = Array.isArray(lesson.tips) && lesson.tips.length ? `Tips:\n- ${lesson.tips.join('\n- ')}` : '';
       const progressTotal = lesson.solution && lesson.solution.moves ? lesson.solution.moves.length : 0;
+      const lessonLine = progressTotal
+        ? `Lesson: ${lesson.title} (step ${Math.min(TRAIN.stepIndex + 1, progressTotal)}/${progressTotal})`
+        : `Lesson: ${lesson.title}`;
       const progress = progressTotal ? `Progress: ${TRAIN.stepIndex}/${progressTotal}` : 'Progress: free play';
       const parts = [
-        `Lesson: ${lesson.title}`,
+        loadedPack,
+        lessonLine,
         `Goal: ${lesson.goal}`,
         tips,
         progress,
@@ -769,13 +797,73 @@
       lessonBoxEl.textContent = parts.join('\n\n');
     }
 
+    function renderPackSelect() {
+      if (!LESSON_PACKS.length) {
+        lessonPackSelectEl.innerHTML = '<option value="">No lesson packs found</option>';
+        return;
+      }
+      lessonPackSelectEl.innerHTML = LESSON_PACKS
+        .map((pack) => `<option value="${escapeHtml(pack.id)}">${escapeHtml(pack.title)}</option>`)
+        .join('');
+      if (ACTIVE_PACK_ID) lessonPackSelectEl.value = ACTIVE_PACK_ID;
+    }
+
+    function renderLessonSelect() {
+      if (!LESSONS.length) {
+        lessonSelectEl.innerHTML = '<option value="">No lessons found</option>';
+        return;
+      }
+      lessonSelectEl.innerHTML = LESSONS
+        .map((lesson) => `<option value="${escapeHtml(lesson.id)}">${escapeHtml(lesson.title)}</option>`)
+        .join('');
+    }
+
+    async function fetchJson(path) {
+      const res = await fetch(`${path}?v=${Date.now()}`);
+      if (!res.ok) throw new Error(`Could not fetch ${path} (${res.status}).`);
+      return res.json();
+    }
+
+    async function loadPackById(packId) {
+      const pack = LESSON_PACKS.find((entry) => entry.id === packId);
+      if (!pack) throw new Error(`Unknown lesson pack: ${packId}`);
+
+      if (!PACK_CACHE.has(pack.id)) {
+        const packPath = pack.file.includes('/') ? pack.file : `lessons/${pack.file}`;
+        const data = await fetchJson(packPath);
+        PACK_CACHE.set(pack.id, Array.isArray(data) ? data : []);
+      }
+
+      LESSONS = PACK_CACHE.get(pack.id);
+      ACTIVE_PACK_ID = pack.id;
+      ACTIVE_PACK_TITLE = pack.title;
+      renderPackSelect();
+      renderLessonSelect();
+    }
+
+    async function loadLegacyLessonsFallback() {
+      const data = await fetchJson(LEGACY_LESSONS_PATH);
+      LESSON_PACKS = [{ id: 'legacy_lessons', title: 'All Lessons (legacy)', file: LEGACY_LESSONS_PATH }];
+      PACK_CACHE.set('legacy_lessons', Array.isArray(data) ? data : []);
+      await loadPackById('legacy_lessons');
+    }
+
     async function loadLessonsData() {
-      const res = await fetch(`${LESSONS_PATH}?v=${Date.now()}`);
-      if (!res.ok) throw new Error(`Could not fetch lessons JSON (${res.status}).`);
-      const data = await res.json();
-      LESSONS = Array.isArray(data) ? data : [];
-      lessonSelectEl.innerHTML = LESSONS.map((lesson) => `<option value="${lesson.id}">${lesson.title}</option>`).join('');
-      if (!LESSONS.length) lessonSelectEl.innerHTML = '<option value="">No lessons found</option>';
+      try {
+        const data = await fetchJson(LESSONS_INDEX_PATH);
+        const packs = Array.isArray(data) ? data : [];
+        LESSON_PACKS = packs
+          .filter((entry) => entry && entry.id && entry.title && entry.file)
+          .map((entry) => ({ id: entry.id, title: entry.title, file: entry.file }));
+
+        if (!LESSON_PACKS.length) throw new Error('Lesson index is empty.');
+        await loadPackById(LESSON_PACKS[0].id);
+      } catch (_) {
+        await loadLegacyLessonsFallback();
+      }
+
+      renderPackSelect();
+      renderLessonSelect();
     }
 
     function findSelectedLesson() {
@@ -847,6 +935,8 @@
         turn: S.turn,
         history: [...S.moveLog],
         lesson: TRAIN.active && TRAIN.lesson ? TRAIN.lesson.id : null,
+        lessonPackId: ACTIVE_PACK_ID,
+        lessonPackTitle: ACTIVE_PACK_TITLE,
         lessonStep: TRAIN.active ? TRAIN.stepIndex : null,
         constraints: TRAIN.active && TRAIN.lesson ? normalizeConstraints(TRAIN.lesson) : null,
         lastAttempt: TRAIN.lastAttempt,
@@ -936,6 +1026,15 @@
       exitLessonMode('Lesson mode exited after manual FEN load.');
     });
     document.getElementById('copyFenBtn').addEventListener('click', copyCurrentFEN);
+    lessonPackSelectEl.addEventListener('change', async () => {
+      if (!lessonPackSelectEl.value) return;
+      try {
+        await loadPackById(lessonPackSelectEl.value);
+        exitLessonMode('Pick a lesson and click Load Lesson.');
+      } catch (err) {
+        updateLessonBox(`Could not load selected lesson pack: ${err.message}`);
+      }
+    });
     document.getElementById('loadLessonBtn').addEventListener('click', loadLesson);
     document.getElementById('resetLessonBtn').addEventListener('click', resetCurrentLesson);
     document.getElementById('showHintBtn').addEventListener('click', showHint);
@@ -946,7 +1045,11 @@
     updateLessonBox('Loading lessons...');
     loadLessonsData()
       .then(() => updateLessonBox('No lesson loaded. Pick a lesson and click Load Lesson.'))
-      .catch((err) => updateLessonBox(`Could not load lessons JSON: ${err.message}`));
+      .catch((err) => {
+        lessonPackSelectEl.innerHTML = '<option value="">No lesson packs available</option>';
+        lessonSelectEl.innerHTML = '<option value="">No lessons available</option>';
+        updateLessonBox(`Could not load lessons. Please check lessons/index.json or lessons/lessons.json. (${err.message})`);
+      });
   </script>
 </body>
 </html>

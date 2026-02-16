@@ -1,0 +1,5 @@
+[
+  { "id": "tactics_forks", "title": "Tactics: Forks", "file": "forks.json" },
+  { "id": "tactics_pins", "title": "Tactics: Pins & Skewers", "file": "pins.json" },
+  { "id": "mates_endgames", "title": "Mates & Endgames", "file": "mates.json" }
+]

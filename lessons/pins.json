@@ -1,0 +1,78 @@
+[
+  {
+    "id": "pin_001",
+    "title": "Absolute Pin – Illegal Knight Move",
+    "type": "demo",
+    "fen": "4k3/8/8/8/8/8/4n3/4K2R b K - 0 1",
+    "sideToMove": "b",
+    "goal": "Observe how the pinned knight on e2 cannot legally move because it exposes the king.",
+    "hint": "Try selecting the knight and compare legal markers with your expectation.",
+    "tips": [
+      "A piece is absolutely pinned if moving it would leave the king in check.",
+      "Legal move generation automatically removes moves that expose your king."
+    ],
+    "constraints": {
+      "userSide": "b",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": [],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e8d7"],
+      "san": ["Kd7"],
+      "explanation": [
+        "Black should move the king instead of the pinned knight.",
+        "After the king moves, the pin no longer applies."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e8d7",
+        "message": "Good. King movement breaks the pin setup."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Demo mode: keep exploring legal options and note the pinned knight behavior."
+      }
+    ]
+  },
+  {
+    "id": "skewer_001",
+    "title": "Skewer",
+    "type": "puzzle",
+    "fen": "6k1/8/8/8/8/8/6R1/6Kq w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Skewer the king and win the queen.",
+    "hint": "Find a rook check that attacks through the king to the queen.",
+    "tips": [
+      "In a skewer, the more valuable piece moves away first.",
+      "Line pieces (rook, bishop, queen) create skewers."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["g2"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["g2g8"],
+      "san": ["Rg8+"],
+      "explanation": [
+        "The king must move, revealing the queen behind it.",
+        "White wins material after the king sidesteps."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g2g8",
+        "message": "Correct. That's the skewer pattern."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Look for a checking rook move on the g-file."
+      }
+    ]
+  }
+]
