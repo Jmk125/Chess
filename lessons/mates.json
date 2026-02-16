@@ -38,6 +38,82 @@
     ]
   },
   {
+    "id": "mate_002",
+    "title": "Ladder Mate Finish",
+    "type": "puzzle",
+    "fen": "7k/6R1/6R1/8/8/8/8/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use coordinated rooks to finish the mating net.",
+    "hint": "One rook steps up to the 8th rank.",
+    "tips": [
+      "Ladder mates rely on cutting off ranks repeatedly.",
+      "Keep both rooks protected while shrinking king space."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["g7"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["g7g8"],
+      "san": ["Rg8#"],
+      "explanation": [
+        "Rg8# seals the king on h8 with no escape squares.",
+        "The supporting rook keeps g8 protected, completing the net."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g7g8",
+        "message": "Great execution of the ladder mate pattern."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Bring the top rook to the 8th rank to complete the mate."
+      }
+    ]
+  },
+  {
+    "id": "mate_003",
+    "title": "Queen Mate with King Support",
+    "type": "puzzle",
+    "fen": "7k/6Q1/6K1/8/8/8/8/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Deliver mate by coordinating queen and king.",
+    "hint": "Move the queen to a checking square on the 8th rank.",
+    "tips": [
+      "A queen mate is strongest when your king removes escape squares.",
+      "Always check if the checked king can capture your queen."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["g7"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["g7f8"],
+      "san": ["Qf8#"],
+      "explanation": [
+        "Qf8# gives check while covering all king escapes.",
+        "The white king on g6 supports the mating construction."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g7f8",
+        "message": "Correct — textbook queen-and-king mate."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a queen move to the 8th rank that keeps your queen safe."
+      }
+    ]
+  },
+  {
     "id": "endgame_001",
     "title": "Endgame: Promote the Passed Pawn",
     "type": "puzzle",
@@ -72,6 +148,40 @@
       {
         "ifUserMove": "*",
         "message": "In this puzzle, focus on promoting the passed pawn."
+      }
+    ]
+  },
+  {
+    "id": "endgame_002",
+    "title": "Endgame Technique: Shoulder the King",
+    "type": "demo",
+    "fen": "8/8/4k3/8/4K3/8/4P3/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use king activity to support your pawn advance.",
+    "hint": "Start by improving king position with opposition ideas.",
+    "tips": [
+      "In king-and-pawn endings, king activity is often decisive.",
+      "Opposition and shouldering help escort pawns to promotion."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": ["K"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e4d4"],
+      "san": ["Kd4"],
+      "explanation": [
+        "King centralization creates winning chances in pawn endings.",
+        "Good endgame technique starts with active king play."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice. Prioritize king activity before rushing pawn moves."
       }
     ]
   }

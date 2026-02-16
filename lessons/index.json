@@ -1,5 +1,6 @@
 [
-  { "id": "tactics_forks", "title": "Tactics: Forks", "file": "forks.json" },
-  { "id": "tactics_pins", "title": "Tactics: Pins & Skewers", "file": "pins.json" },
-  { "id": "mates_endgames", "title": "Mates & Endgames", "file": "mates.json" }
+  { "id": "tactics_forks", "title": "Tactics: Forks & Double Attacks", "file": "forks.json" },
+  { "id": "tactics_pins", "title": "Tactics: Pins, Skewers & X-Rays", "file": "pins.json" },
+  { "id": "mates_endgames", "title": "Mates & Endgames", "file": "mates.json" },
+  { "id": "complex_tactics", "title": "Complex Tactics: Deflection, Decoy & Interference", "file": "complex.json" }
 ]

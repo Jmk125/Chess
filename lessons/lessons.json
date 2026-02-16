@@ -14,13 +14,21 @@
     "constraints": {
       "userSide": "w",
       "lockOtherSide": true,
-      "restrictFromSquares": ["e6"],
-      "restrictPieceTypes": ["N"],
+      "restrictFromSquares": [
+        "e6"
+      ],
+      "restrictPieceTypes": [
+        "N"
+      ],
       "enforceOnlyAllowedMoves": true
     },
     "solution": {
-      "moves": ["e6c7"],
-      "san": ["Nc7+"],
+      "moves": [
+        "e6c7"
+      ],
+      "san": [
+        "Nc7+"
+      ],
       "explanation": [
         "Nc7+ checks the king and attacks the queen at the same time.",
         "After the king responds, White can capture the queen."
@@ -34,6 +42,182 @@
       {
         "ifUserMove": "*",
         "message": "Not quite. Search for a checking knight jump that hits the queen."
+      }
+    ]
+  },
+  {
+    "id": "fork_002",
+    "title": "Queen Fork – Check and Win the Rook",
+    "type": "puzzle",
+    "fen": "6kr/8/8/8/3Q4/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use a queen check that also attacks a major piece.",
+    "hint": "Look for a queen move to the 8th rank.",
+    "tips": [
+      "A queen fork is strongest when one target is the king.",
+      "Scan ranks and diagonals for double attacks."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "d4"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": [
+        "d4d8"
+      ],
+      "san": [
+        "Qd8+"
+      ],
+      "explanation": [
+        "Qd8+ checks the king on g8 while also attacking the rook on h8.",
+        "After Black responds, White can win the rook."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "d4d8",
+        "message": "Excellent. You found the queen fork."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a forcing queen check from d4."
+      }
+    ]
+  },
+  {
+    "id": "fork_003",
+    "title": "Pawn Fork – King and Rook",
+    "type": "puzzle",
+    "fen": "8/5r1k/8/6P1/8/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Advance the pawn to fork two higher-value pieces.",
+    "hint": "Push the pawn with check.",
+    "tips": [
+      "Pawn forks are easy to miss because pawns move slowly.",
+      "A checking pawn push can create immediate tactical threats."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "g5"
+      ],
+      "restrictPieceTypes": [
+        "P"
+      ],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": [
+        "g5g6"
+      ],
+      "san": [
+        "g6+"
+      ],
+      "explanation": [
+        "g6+ checks the king on h7 and attacks the rook on f7.",
+        "After the king moves, White can usually win the rook."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g5g6",
+        "message": "Great find — that pawn fork is very strong."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Look for a pawn push from g5 that gives check."
+      }
+    ]
+  },
+  {
+    "id": "discovered_001",
+    "title": "Discovered Attack",
+    "type": "demo",
+    "fen": "4k3/8/8/8/8/8/4N3/4R1qK w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Move the knight to discover a rook attack on the queen.",
+    "hint": "Any legal knight move from e2 opens the rook's line to g1.",
+    "tips": [
+      "A discovered attack happens when one piece moves and reveals another attack.",
+      "You can gain tempo if the discovered line also gives check."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "e2"
+      ],
+      "restrictPieceTypes": [
+        "N"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "e2c3"
+      ],
+      "san": [
+        "Nc3"
+      ],
+      "explanation": [
+        "Moving the knight opens the rook's path from e1 to g1.",
+        "Black's queen becomes exposed to capture threats."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice exploration. Notice how the rook line changes after the knight moves."
+      }
+    ]
+  },
+  {
+    "id": "double_attack_001",
+    "title": "Double Attack with Tempo",
+    "type": "demo",
+    "fen": "6k1/8/8/8/3Q4/8/6K1/6r1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Play a checking move that also creates a second threat.",
+    "hint": "Use the queen to check from the back rank.",
+    "tips": [
+      "The best tactical moves combine multiple threats.",
+      "A check often gives enough tempo to cash in material."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "d4"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "d4d8"
+      ],
+      "san": [
+        "Qd8+"
+      ],
+      "explanation": [
+        "Qd8+ is a forcing check and improves queen activity.",
+        "Always ask whether your check can also attack a second target."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good try. In tactical positions, compare forcing checks first."
       }
     ]
   },
@@ -57,8 +241,12 @@
       "enforceOnlyAllowedMoves": false
     },
     "solution": {
-      "moves": ["e8d7"],
-      "san": ["Kd7"],
+      "moves": [
+        "e8d7"
+      ],
+      "san": [
+        "Kd7"
+      ],
       "explanation": [
         "Black should move the king instead of the pinned knight.",
         "After the king moves, the pin no longer applies."
@@ -76,40 +264,86 @@
     ]
   },
   {
-    "id": "mate_001",
-    "title": "Back Rank Mate",
+    "id": "pin_002",
+    "title": "Create a Pin with a Bishop",
     "type": "puzzle",
-    "fen": "6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1",
+    "fen": "6k1/3q4/2n5/8/8/8/4B3/6K1 w - - 0 1",
     "sideToMove": "w",
-    "goal": "Deliver immediate back-rank checkmate.",
-    "hint": "The rook can invade the 8th rank with check.",
+    "goal": "Pin the knight to the queen with one bishop move.",
+    "hint": "Find a diagonal from e2 that lines up c6 and d7.",
     "tips": [
-      "Look at the black king's escape squares.",
-      "If the flight squares are blocked by its own pawns, mating nets are near."
+      "Relative pins tie a piece to a more valuable piece.",
+      "Pinned pieces often become tactical targets."
     ],
     "constraints": {
       "userSide": "w",
       "lockOtherSide": true,
-      "restrictFromSquares": ["f1"],
-      "restrictPieceTypes": ["R"],
+      "restrictFromSquares": [
+        "e2"
+      ],
+      "restrictPieceTypes": [
+        "B"
+      ],
       "enforceOnlyAllowedMoves": true
     },
     "solution": {
-      "moves": ["f1f8"],
-      "san": ["Rf8#"],
+      "moves": [
+        "e2b5"
+      ],
+      "san": [
+        "Bb5"
+      ],
       "explanation": [
-        "Rf8 is checkmate because the king has no legal escapes.",
-        "Back-rank weaknesses are fatal when heavy pieces invade."
+        "Bb5 lines up bishop-knight-queen, pinning the knight on c6.",
+        "The knight cannot move without dropping the queen on d7."
       ]
     },
     "responses": [
       {
-        "ifUserMove": "f1f8",
-        "message": "Excellent — back-rank mate delivered."
+        "ifUserMove": "e2b5",
+        "message": "Correct. You created a strong relative pin."
       },
       {
         "ifUserMove": "*",
-        "message": "Try a forcing rook check on the back rank."
+        "message": "Look for a bishop move that puts pressure on c6 and d7 together."
+      }
+    ]
+  },
+  {
+    "id": "pin_003",
+    "title": "Absolute Pin on the Knight",
+    "type": "demo",
+    "fen": "6k1/5n2/8/8/2B5/8/8/6K1 b - - 0 1",
+    "sideToMove": "b",
+    "goal": "See why the knight on f7 is pinned to the king.",
+    "hint": "Try selecting the knight and check which moves are legal.",
+    "tips": [
+      "Absolute pins are based on king safety and are fully binding.",
+      "Pinned defenders can make tactical shots possible elsewhere."
+    ],
+    "constraints": {
+      "userSide": "b",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": [],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "g8f8"
+      ],
+      "san": [
+        "Kf8"
+      ],
+      "explanation": [
+        "By moving the king, Black removes the absolute pin.",
+        "Only after king movement can the knight become mobile again."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice. Focus on how king movement changes the pin status."
       }
     ]
   },
@@ -128,13 +362,21 @@
     "constraints": {
       "userSide": "w",
       "lockOtherSide": true,
-      "restrictFromSquares": ["g2"],
-      "restrictPieceTypes": ["R"],
+      "restrictFromSquares": [
+        "g2"
+      ],
+      "restrictPieceTypes": [
+        "R"
+      ],
       "enforceOnlyAllowedMoves": true
     },
     "solution": {
-      "moves": ["g2g8"],
-      "san": ["Rg8+"],
+      "moves": [
+        "g2g8"
+      ],
+      "san": [
+        "Rg8+"
+      ],
       "explanation": [
         "The king must move, revealing the queen behind it.",
         "White wins material after the king sidesteps."
@@ -152,36 +394,182 @@
     ]
   },
   {
-    "id": "discovered_001",
-    "title": "Discovered Attack",
+    "id": "xray_001",
+    "title": "X-Ray Pressure Through a Pinned Piece",
     "type": "demo",
-    "fen": "4k3/8/8/8/8/8/4N3/4R1qK w - - 0 1",
+    "fen": "6k1/5q2/5n2/8/8/8/5R2/6K1 w - - 0 1",
     "sideToMove": "w",
-    "goal": "Move the knight to discover a rook attack on the queen.",
-    "hint": "Any legal knight move from e2 opens the rook's line to g1.",
+    "goal": "Increase pressure on the pinned knight and queen alignment.",
+    "hint": "Find a rook move that keeps pressure on f-file targets.",
     "tips": [
-      "A discovered attack happens when one piece moves and reveals another attack.",
-      "You can gain tempo if the discovered line also gives check."
+      "X-ray tactics attack a piece through another piece.",
+      "Pins and x-rays often combine into winning tactical themes."
     ],
     "constraints": {
       "userSide": "w",
       "lockOtherSide": true,
-      "restrictFromSquares": ["e2"],
-      "restrictPieceTypes": ["N"],
+      "restrictFromSquares": [
+        "f2"
+      ],
+      "restrictPieceTypes": [
+        "R"
+      ],
       "enforceOnlyAllowedMoves": false
     },
     "solution": {
-      "moves": ["e2c3"],
-      "san": ["Nc3"],
+      "moves": [
+        "f2f8"
+      ],
+      "san": [
+        "Rf8+"
+      ],
       "explanation": [
-        "Moving the knight opens the rook's path from e1 to g1.",
-        "Black's queen becomes exposed to capture threats."
+        "Rf8+ is a forcing way to exploit alignment on the f-file.",
+        "When pieces stack up on one line, look for x-ray and pin ideas."
       ]
     },
     "responses": [
       {
         "ifUserMove": "*",
-        "message": "Nice exploration. Notice how the rook line changes after the knight moves."
+        "message": "Good thinking. Keep identifying aligned tactical targets."
+      }
+    ]
+  },
+  {
+    "id": "mate_001",
+    "title": "Back Rank Mate",
+    "type": "puzzle",
+    "fen": "6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Deliver immediate back-rank checkmate.",
+    "hint": "The rook can invade the 8th rank with check.",
+    "tips": [
+      "Look at the black king's escape squares.",
+      "If the flight squares are blocked by its own pawns, mating nets are near."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "f1"
+      ],
+      "restrictPieceTypes": [
+        "R"
+      ],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": [
+        "f1f8"
+      ],
+      "san": [
+        "Rf8#"
+      ],
+      "explanation": [
+        "Rf8 is checkmate because the king has no legal escapes.",
+        "Back-rank weaknesses are fatal when heavy pieces invade."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "f1f8",
+        "message": "Excellent — back-rank mate delivered."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a forcing rook check on the back rank."
+      }
+    ]
+  },
+  {
+    "id": "mate_002",
+    "title": "Ladder Mate Finish",
+    "type": "puzzle",
+    "fen": "7k/6R1/6R1/8/8/8/8/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use coordinated rooks to finish the mating net.",
+    "hint": "One rook steps up to the 8th rank.",
+    "tips": [
+      "Ladder mates rely on cutting off ranks repeatedly.",
+      "Keep both rooks protected while shrinking king space."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "g7"
+      ],
+      "restrictPieceTypes": [
+        "R"
+      ],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": [
+        "g7g8"
+      ],
+      "san": [
+        "Rg8#"
+      ],
+      "explanation": [
+        "Rg8# seals the king on h8 with no escape squares.",
+        "The supporting rook keeps g8 protected, completing the net."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g7g8",
+        "message": "Great execution of the ladder mate pattern."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Bring the top rook to the 8th rank to complete the mate."
+      }
+    ]
+  },
+  {
+    "id": "mate_003",
+    "title": "Queen Mate with King Support",
+    "type": "puzzle",
+    "fen": "7k/6Q1/6K1/8/8/8/8/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Deliver mate by coordinating queen and king.",
+    "hint": "Move the queen to a checking square on the 8th rank.",
+    "tips": [
+      "A queen mate is strongest when your king removes escape squares.",
+      "Always check if the checked king can capture your queen."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "g7"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": [
+        "g7f8"
+      ],
+      "san": [
+        "Qf8#"
+      ],
+      "explanation": [
+        "Qf8# gives check while covering all king escapes.",
+        "The white king on g6 supports the mating construction."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g7f8",
+        "message": "Correct — textbook queen-and-king mate."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a queen move to the 8th rank that keeps your queen safe."
       }
     ]
   },
@@ -200,13 +588,21 @@
     "constraints": {
       "userSide": "w",
       "lockOtherSide": true,
-      "restrictFromSquares": ["e7"],
-      "restrictPieceTypes": ["P"],
+      "restrictFromSquares": [
+        "e7"
+      ],
+      "restrictPieceTypes": [
+        "P"
+      ],
       "enforceOnlyAllowedMoves": true
     },
     "solution": {
-      "moves": ["e7e8Q"],
-      "san": ["e8=Q"],
+      "moves": [
+        "e7e8Q"
+      ],
+      "san": [
+        "e8=Q"
+      ],
       "explanation": [
         "Promotion creates a queen and a decisive material advantage.",
         "Always evaluate if immediate promotion is legal and strongest."
@@ -220,6 +616,214 @@
       {
         "ifUserMove": "*",
         "message": "In this puzzle, focus on promoting the passed pawn."
+      }
+    ]
+  },
+  {
+    "id": "endgame_002",
+    "title": "Endgame Technique: Shoulder the King",
+    "type": "demo",
+    "fen": "8/8/4k3/8/4K3/8/4P3/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use king activity to support your pawn advance.",
+    "hint": "Start by improving king position with opposition ideas.",
+    "tips": [
+      "In king-and-pawn endings, king activity is often decisive.",
+      "Opposition and shouldering help escort pawns to promotion."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": [
+        "K"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "e4d4"
+      ],
+      "san": [
+        "Kd4"
+      ],
+      "explanation": [
+        "King centralization creates winning chances in pawn endings.",
+        "Good endgame technique starts with active king play."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice. Prioritize king activity before rushing pawn moves."
+      }
+    ]
+  },
+  {
+    "id": "deflection_001",
+    "title": "Deflection: Drag the Defender Away",
+    "type": "demo",
+    "fen": "6k1/5ppp/8/8/8/8/4Q3/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Practice forcing moves that pull key defenders off critical squares.",
+    "hint": "Start with a forcing queen check to gain tempo.",
+    "tips": [
+      "Deflection removes a defending piece from an important duty.",
+      "Checks and captures are the easiest ways to trigger deflection."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "e2"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "e2e8"
+      ],
+      "san": [
+        "Qe8+"
+      ],
+      "explanation": [
+        "Forcing checks are common entry points into deflection combinations.",
+        "After a forced response, re-evaluate which squares are under-defended."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good. Focus on forcing moves that alter defensive structure."
+      }
+    ]
+  },
+  {
+    "id": "decoy_001",
+    "title": "Decoy: Pull the King into a Net",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/5Q2/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use checks to lure the king toward vulnerable squares.",
+    "hint": "Look for a queen check that changes king geometry.",
+    "tips": [
+      "A decoy tactic forces a piece onto a worse square.",
+      "King decoys are often followed by mating nets or forks."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "f2"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "f2a7"
+      ],
+      "san": [
+        "Qa7+"
+      ],
+      "explanation": [
+        "Long-range queen checks can decoy the king and reshape tactical motifs.",
+        "Always compare king destinations after each forcing move."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice try. Keep working from forcing checks to identify decoys."
+      }
+    ]
+  },
+  {
+    "id": "interference_001",
+    "title": "Interference: Block a Defensive Line",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/3Q4/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Practice placing a piece to interrupt a defender's line.",
+    "hint": "A central queen lift often creates interference ideas.",
+    "tips": [
+      "Interference places a piece between defender and target.",
+      "This tactic is strongest on files and diagonals."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "d2"
+      ],
+      "restrictPieceTypes": [
+        "Q"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "d2d8"
+      ],
+      "san": [
+        "Qd8+"
+      ],
+      "explanation": [
+        "Interference themes often begin with a forcing placement move.",
+        "Identify which enemy piece loses contact after the block."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good. Keep identifying lines where one blocker disrupts defense."
+      }
+    ]
+  },
+  {
+    "id": "clearance_001",
+    "title": "Clearance: Vacate a Critical Square",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/4N3/4R1K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Move a piece away to open a line for a stronger follow-up.",
+    "hint": "Relocate the knight to clear the e-file.",
+    "tips": [
+      "Clearance sacrifices space to unlock tactical potential.",
+      "Ask which piece has the highest-value line behind it."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": [
+        "e2"
+      ],
+      "restrictPieceTypes": [
+        "N"
+      ],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": [
+        "e2c3"
+      ],
+      "san": [
+        "Nc3"
+      ],
+      "explanation": [
+        "Moving the knight clears the e-file for heavy-piece activity.",
+        "Clearance is a key building block in multi-move combinations."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Well done. Track how cleared lines create new tactical resources."
       }
     ]
   }

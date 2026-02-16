@@ -38,6 +38,82 @@
     ]
   },
   {
+    "id": "fork_002",
+    "title": "Queen Fork – Check and Win the Rook",
+    "type": "puzzle",
+    "fen": "6kr/8/8/8/3Q4/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use a queen check that also attacks a major piece.",
+    "hint": "Look for a queen move to the 8th rank.",
+    "tips": [
+      "A queen fork is strongest when one target is the king.",
+      "Scan ranks and diagonals for double attacks."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["d4"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["d4d8"],
+      "san": ["Qd8+"],
+      "explanation": [
+        "Qd8+ checks the king on g8 while also attacking the rook on h8.",
+        "After Black responds, White can win the rook."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "d4d8",
+        "message": "Excellent. You found the queen fork."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Try a forcing queen check from d4."
+      }
+    ]
+  },
+  {
+    "id": "fork_003",
+    "title": "Pawn Fork – King and Rook",
+    "type": "puzzle",
+    "fen": "8/5r1k/8/6P1/8/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Advance the pawn to fork two higher-value pieces.",
+    "hint": "Push the pawn with check.",
+    "tips": [
+      "Pawn forks are easy to miss because pawns move slowly.",
+      "A checking pawn push can create immediate tactical threats."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["g5"],
+      "restrictPieceTypes": ["P"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["g5g6"],
+      "san": ["g6+"],
+      "explanation": [
+        "g6+ checks the king on h7 and attacks the rook on f7.",
+        "After the king moves, White can usually win the rook."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "g5g6",
+        "message": "Great find — that pawn fork is very strong."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Look for a pawn push from g5 that gives check."
+      }
+    ]
+  },
+  {
     "id": "discovered_001",
     "title": "Discovered Attack",
     "type": "demo",
@@ -68,6 +144,40 @@
       {
         "ifUserMove": "*",
         "message": "Nice exploration. Notice how the rook line changes after the knight moves."
+      }
+    ]
+  },
+  {
+    "id": "double_attack_001",
+    "title": "Double Attack with Tempo",
+    "type": "demo",
+    "fen": "6k1/8/8/8/3Q4/8/6K1/6r1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Play a checking move that also creates a second threat.",
+    "hint": "Use the queen to check from the back rank.",
+    "tips": [
+      "The best tactical moves combine multiple threats.",
+      "A check often gives enough tempo to cash in material."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["d4"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["d4d8"],
+      "san": ["Qd8+"],
+      "explanation": [
+        "Qd8+ is a forcing check and improves queen activity.",
+        "Always ask whether your check can also attack a second target."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good try. In tactical positions, compare forcing checks first."
       }
     ]
   }
