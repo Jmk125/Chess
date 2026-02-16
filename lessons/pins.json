@@ -38,6 +38,78 @@
     ]
   },
   {
+    "id": "pin_002",
+    "title": "Create a Pin with a Bishop",
+    "type": "puzzle",
+    "fen": "6k1/3q4/2n5/8/8/8/4B3/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Pin the knight to the queen with one bishop move.",
+    "hint": "Find a diagonal from e2 that lines up c6 and d7.",
+    "tips": [
+      "Relative pins tie a piece to a more valuable piece.",
+      "Pinned pieces often become tactical targets."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e2"],
+      "restrictPieceTypes": ["B"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["e2b5"],
+      "san": ["Bb5"],
+      "explanation": [
+        "Bb5 lines up bishop-knight-queen, pinning the knight on c6.",
+        "The knight cannot move without dropping the queen on d7."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e2b5",
+        "message": "Correct. You created a strong relative pin."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Look for a bishop move that puts pressure on c6 and d7 together."
+      }
+    ]
+  },
+  {
+    "id": "pin_003",
+    "title": "Absolute Pin on the Knight",
+    "type": "demo",
+    "fen": "6k1/5n2/8/8/2B5/8/8/6K1 b - - 0 1",
+    "sideToMove": "b",
+    "goal": "See why the knight on f7 is pinned to the king.",
+    "hint": "Try selecting the knight and check which moves are legal.",
+    "tips": [
+      "Absolute pins are based on king safety and are fully binding.",
+      "Pinned defenders can make tactical shots possible elsewhere."
+    ],
+    "constraints": {
+      "userSide": "b",
+      "lockOtherSide": true,
+      "restrictFromSquares": [],
+      "restrictPieceTypes": [],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["g8f8"],
+      "san": ["Kf8"],
+      "explanation": [
+        "By moving the king, Black removes the absolute pin.",
+        "Only after king movement can the knight become mobile again."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice. Focus on how king movement changes the pin status."
+      }
+    ]
+  },
+  {
     "id": "skewer_001",
     "title": "Skewer",
     "type": "puzzle",
@@ -72,6 +144,40 @@
       {
         "ifUserMove": "*",
         "message": "Look for a checking rook move on the g-file."
+      }
+    ]
+  },
+  {
+    "id": "xray_001",
+    "title": "X-Ray Pressure Through a Pinned Piece",
+    "type": "demo",
+    "fen": "6k1/5q2/5n2/8/8/8/5R2/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Increase pressure on the pinned knight and queen alignment.",
+    "hint": "Find a rook move that keeps pressure on f-file targets.",
+    "tips": [
+      "X-ray tactics attack a piece through another piece.",
+      "Pins and x-rays often combine into winning tactical themes."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["f2"],
+      "restrictPieceTypes": ["R"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["f2f8"],
+      "san": ["Rf8+"],
+      "explanation": [
+        "Rf8+ is a forcing way to exploit alignment on the f-file.",
+        "When pieces stack up on one line, look for x-ray and pin ideas."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good thinking. Keep identifying aligned tactical targets."
       }
     ]
   }

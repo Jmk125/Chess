@@ -1,0 +1,138 @@
+[
+  {
+    "id": "deflection_001",
+    "title": "Deflection: Drag the Defender Away",
+    "type": "demo",
+    "fen": "6k1/5ppp/8/8/8/8/4Q3/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Practice forcing moves that pull key defenders off critical squares.",
+    "hint": "Start with a forcing queen check to gain tempo.",
+    "tips": [
+      "Deflection removes a defending piece from an important duty.",
+      "Checks and captures are the easiest ways to trigger deflection."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e2"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e2e8"],
+      "san": ["Qe8+"],
+      "explanation": [
+        "Forcing checks are common entry points into deflection combinations.",
+        "After a forced response, re-evaluate which squares are under-defended."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good. Focus on forcing moves that alter defensive structure."
+      }
+    ]
+  },
+  {
+    "id": "decoy_001",
+    "title": "Decoy: Pull the King into a Net",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/5Q2/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Use checks to lure the king toward vulnerable squares.",
+    "hint": "Look for a queen check that changes king geometry.",
+    "tips": [
+      "A decoy tactic forces a piece onto a worse square.",
+      "King decoys are often followed by mating nets or forks."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["f2"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["f2a7"],
+      "san": ["Qa7+"],
+      "explanation": [
+        "Long-range queen checks can decoy the king and reshape tactical motifs.",
+        "Always compare king destinations after each forcing move."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice try. Keep working from forcing checks to identify decoys."
+      }
+    ]
+  },
+  {
+    "id": "interference_001",
+    "title": "Interference: Block a Defensive Line",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/3Q4/6K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Practice placing a piece to interrupt a defender's line.",
+    "hint": "A central queen lift often creates interference ideas.",
+    "tips": [
+      "Interference places a piece between defender and target.",
+      "This tactic is strongest on files and diagonals."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["d2"],
+      "restrictPieceTypes": ["Q"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["d2d8"],
+      "san": ["Qd8+"],
+      "explanation": [
+        "Interference themes often begin with a forcing placement move.",
+        "Identify which enemy piece loses contact after the block."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Good. Keep identifying lines where one blocker disrupts defense."
+      }
+    ]
+  },
+  {
+    "id": "clearance_001",
+    "title": "Clearance: Vacate a Critical Square",
+    "type": "demo",
+    "fen": "6k1/8/8/8/8/8/4N3/4R1K1 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Move a piece away to open a line for a stronger follow-up.",
+    "hint": "Relocate the knight to clear the e-file.",
+    "tips": [
+      "Clearance sacrifices space to unlock tactical potential.",
+      "Ask which piece has the highest-value line behind it."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e2"],
+      "restrictPieceTypes": ["N"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e2c3"],
+      "san": ["Nc3"],
+      "explanation": [
+        "Moving the knight clears the e-file for heavy-piece activity.",
+        "Clearance is a key building block in multi-move combinations."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Well done. Track how cleared lines create new tactical resources."
+      }
+    ]
+  }
+]
