@@ -1,0 +1,74 @@
+[
+  {
+    "id": "fork_001",
+    "title": "Knight Fork – Win the Queen",
+    "type": "puzzle",
+    "fen": "2k5/2q5/4N3/8/8/8/6K1/8 w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Find the forcing knight fork that wins the queen.",
+    "hint": "Look for a checking knight move that also attacks the queen.",
+    "tips": [
+      "Checks are forcing moves.",
+      "Knight forks often target king and queen together."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e6"],
+      "restrictPieceTypes": ["N"],
+      "enforceOnlyAllowedMoves": true
+    },
+    "solution": {
+      "moves": ["e6c7"],
+      "san": ["Nc7+"],
+      "explanation": [
+        "Nc7+ checks the king and attacks the queen at the same time.",
+        "After the king responds, White can capture the queen."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "e6c7",
+        "message": "Correct! This is the classic knight fork."
+      },
+      {
+        "ifUserMove": "*",
+        "message": "Not quite. Search for a checking knight jump that hits the queen."
+      }
+    ]
+  },
+  {
+    "id": "discovered_001",
+    "title": "Discovered Attack",
+    "type": "demo",
+    "fen": "4k3/8/8/8/8/8/4N3/4R1qK w - - 0 1",
+    "sideToMove": "w",
+    "goal": "Move the knight to discover a rook attack on the queen.",
+    "hint": "Any legal knight move from e2 opens the rook's line to g1.",
+    "tips": [
+      "A discovered attack happens when one piece moves and reveals another attack.",
+      "You can gain tempo if the discovered line also gives check."
+    ],
+    "constraints": {
+      "userSide": "w",
+      "lockOtherSide": true,
+      "restrictFromSquares": ["e2"],
+      "restrictPieceTypes": ["N"],
+      "enforceOnlyAllowedMoves": false
+    },
+    "solution": {
+      "moves": ["e2c3"],
+      "san": ["Nc3"],
+      "explanation": [
+        "Moving the knight opens the rook's path from e1 to g1.",
+        "Black's queen becomes exposed to capture threats."
+      ]
+    },
+    "responses": [
+      {
+        "ifUserMove": "*",
+        "message": "Nice exploration. Notice how the rook line changes after the knight moves."
+      }
+    ]
+  }
+]
