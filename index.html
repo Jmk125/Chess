@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teaching Chess Board</title>
+  <style>
+    :root {
+      --light: #f0d9b5;
+      --dark: #b58863;
+      --panel: #141414;
+      --accent: #4e8cff;
+      --text: #f3f3f3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: #0e0e0f;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: auto 320px;
+      gap: 18px;
+      align-items: start;
+    }
+    .board-wrap { position: relative; }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 68px);
+      grid-template-rows: repeat(8, 68px);
+      border: 2px solid #333;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
+    .sq {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .light { background: var(--light); }
+    .dark { background: var(--dark); }
+    .selected { outline: 3px solid #55f; outline-offset: -3px; }
+    .legal::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(35,35,35,.35);
+    }
+    .capture::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 4px solid rgba(20,20,20,.35);
+      border-radius: 50%;
+    }
+    .check { box-shadow: inset 0 0 0 5px rgba(255,0,0,.65); }
+    .coord {
+      position: absolute;
+      font-size: 12px;
+      opacity: .85;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .file-label { right: 4px; bottom: 2px; }
+    .rank-label { left: 4px; top: 2px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid #2b2b2b;
+      padding: 14px;
+      border-radius: 10px;
+      display: grid;
+      gap: 10px;
+      width: 320px;
+    }
+    .panel h2 { margin: 0 0 2px; font-size: 18px; }
+    .btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    button {
+      border: 1px solid #3a3a3a;
+      background: #232325;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 9px 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { border-color: var(--accent); }
+    label { font-size: 13px; opacity: .95; font-weight: 600; }
+    textarea {
+      width: 100%;
+      min-height: 95px;
+      resize: vertical;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+      background: #111114;
+      color: #fff;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+    #lessonBox {
+      min-height: 52px;
+      border: 1px solid #2f2f2f;
+      border-radius: 8px;
+      background: #111114;
+      padding: 8px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .meta { font-size: 13px; opacity: .95; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="board-wrap">
+      <div id="board" aria-label="Chess board"></div>
+    </div>
+    <aside class="panel">
+      <h2>Teaching Board</h2>
+      <div class="btns">
+        <button id="undoBtn">Undo</button>
+        <button id="flipBtn">Flip Board</button>
+      </div>
+      <div class="meta" id="status"></div>
+
+      <label for="fenInput">Position (FEN)</label>
+      <textarea id="fenInput" spellcheck="false"></textarea>
+      <div class="btns">
+        <button id="loadFenBtn">Load FEN</button>
+        <button id="copyFenBtn">Copy Current FEN</button>
+      </div>
+      <button id="sampleLessonBtn">Load Sample Lesson</button>
+
+      <div id="lessonBox">No lesson loaded.</div>
+    </aside>
+  </div>
+
+  <script>
+    const FILES = ['a','b','c','d','e','f','g','h'];
+    const START_FEN = 'rn1qkbnr/pppb1ppp/3pp3/8/2BP4/5N2/PPP2PPP/RNBQ1RK1 w kq - 0 6';
+    const PIECE_UNICODE = {
+      K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙',
+      k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'
+    };
+
+    const LESSONS = [
+      {
+        name: 'Back-rank Mate Basics',
+        fen: '6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1',
+        goal: 'Goal: Deliver checkmate on the back rank using your rook.',
+        hint: 'Hint: Restrict king escape squares first, then force mate with the rook.'
+      }
+    ];
+
+    const S = {
+      board: createEmptyBoard(),
+      turn: 'w',
+      castling: { K:false, Q:false, k:false, q:false },
+      ep: '-',
+      halfmove: 0,
+      fullmove: 1,
+      flipped: false,
+      history: []
+    };
+
+    let selection = null;
+    let legalForSelection = [];
+
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const fenInputEl = document.getElementById('fenInput');
+    const lessonBoxEl = document.getElementById('lessonBox');
+
+    function createEmptyBoard() {
+      return Array.from({ length: 8 }, () => Array(8).fill(''));
+    }
+
+    function squareToCoords(square) {
+      if (!square || square === '-' || square.length !== 2) return null;
+      const f = FILES.indexOf(square[0]);
+      const r = 8 - Number(square[1]);
+      if (f < 0 || Number.isNaN(r) || r < 0 || r > 7) return null;
+      return { r, c: f };
+    }
+
+    function coordsToSquare(r, c) {
+      return `${FILES[c]}${8-r}`;
+    }
+
+    function pieceColor(piece) { return piece === piece.toUpperCase() ? 'w' : 'b'; }
+
+    function parseFEN(fen) {
+      const parts = fen.trim().split(/\s+/);
+      if (parts.length < 4) throw new Error('FEN needs at least 4 fields.');
+      const [placement, turn, castling, ep, halfmove='0', fullmove='1'] = parts;
+      const rows = placement.split('/');
+      if (rows.length !== 8) throw new Error('Piece placement must have 8 ranks.');
+
+      const board = createEmptyBoard();
+      for (let r = 0; r < 8; r++) {
+        let c = 0;
+        for (const ch of rows[r]) {
+          if (/\d/.test(ch)) c += Number(ch);
+          else if ('prnbqkPRNBQK'.includes(ch)) board[r][c++] = ch;
+          else throw new Error(`Invalid piece token: ${ch}`);
+        }
+        if (c !== 8) throw new Error(`Rank ${8-r} does not have 8 files.`);
+      }
+
+      if (!['w','b'].includes(turn)) throw new Error('Active color must be w or b.');
+      if (!(castling === '-' || /^[KQkq]+$/.test(castling))) throw new Error('Invalid castling field.');
+      if (!(ep === '-' || /^[a-h][36]$/.test(ep))) throw new Error('Invalid en-passant square.');
+
+      return {
+        board,
+        turn,
+        castling: {
+          K: castling.includes('K'),
+          Q: castling.includes('Q'),
+          k: castling.includes('k'),
+          q: castling.includes('q')
+        },
+        ep,
+        halfmove: Number.isFinite(Number(halfmove)) ? Number(halfmove) : 0,
+        fullmove: Number.isFinite(Number(fullmove)) ? Number(fullmove) : 1
+      };
+    }
+
+    function boardToFEN() {
+      const ranks = [];
+      for (let r = 0; r < 8; r++) {
+        let run = 0;
+        let rank = '';
+        for (let c = 0; c < 8; c++) {
+          const p = S.board[r][c];
+          if (!p) run++;
+          else {
+            if (run) { rank += run; run = 0; }
+            rank += p;
+          }
+        }
+        if (run) rank += run;
+        ranks.push(rank);
+      }
+      const castling = ['K','Q','k','q'].filter((k) => S.castling[k]).join('') || '-';
+      const ep = S.ep && S.ep !== '' ? S.ep : '-';
+      return `${ranks.join('/')} ${S.turn} ${castling} ${ep} ${S.halfmove} ${S.fullmove}`;
+    }
+
+    function cloneState() {
+      return JSON.parse(JSON.stringify({
+        board: S.board,
+        turn: S.turn,
+        castling: S.castling,
+        ep: S.ep,
+        halfmove: S.halfmove,
+        fullmove: S.fullmove
+      }));
+    }
+
+    function restoreState(snapshot) {
+      S.board = snapshot.board;
+      S.turn = snapshot.turn;
+      S.castling = snapshot.castling;
+      S.ep = snapshot.ep;
+      S.halfmove = snapshot.halfmove;
+      S.fullmove = snapshot.fullmove;
+      selection = null;
+      legalForSelection = [];
+      render();
+    }
+
+    function inBounds(r, c) { return r >= 0 && r < 8 && c >= 0 && c < 8; }
+
+    function kingSquare(board, color) {
+      const k = color === 'w' ? 'K' : 'k';
+      for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (board[r][c] === k) return { r, c };
+      return null;
+    }
+
+    function isSquareAttacked(board, tr, tc, byColor) {
+      const pawnDir = byColor === 'w' ? -1 : 1;
+      for (const dc of [-1,1]) {
+        const r = tr - pawnDir, c = tc + dc;
+        if (inBounds(r,c)) {
+          const p = board[r][c];
+          if (p && pieceColor(p) === byColor && p.toLowerCase() === 'p') return true;
+        }
+      }
+      const knightJumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+      for (const [dr,dc] of knightJumps) {
+        const r = tr + dr, c = tc + dc;
+        if (!inBounds(r,c)) continue;
+        const p = board[r][c];
+        if (p && pieceColor(p) === byColor && p.toLowerCase() === 'n') return true;
+      }
+      const lines = [
+        {dirs:[[-1,0],[1,0],[0,-1],[0,1]], pieces:['r','q']},
+        {dirs:[[-1,-1],[-1,1],[1,-1],[1,1]], pieces:['b','q']}
+      ];
+      for (const group of lines) {
+        for (const [dr,dc] of group.dirs) {
+          let r = tr + dr, c = tc + dc;
+          while (inBounds(r,c)) {
+            const p = board[r][c];
+            if (p) {
+              if (pieceColor(p) === byColor && group.pieces.includes(p.toLowerCase())) return true;
+              break;
+            }
+            r += dr; c += dc;
+          }
+        }
+      }
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = tr + dr, c = tc + dc;
+        if (!inBounds(r,c)) continue;
+        const p = board[r][c];
+        if (p && pieceColor(p) === byColor && p.toLowerCase() === 'k') return true;
+      }
+      return false;
+    }
+
+    function inCheck(board, color) {
+      const king = kingSquare(board, color);
+      if (!king) return false;
+      return isSquareAttacked(board, king.r, king.c, color === 'w' ? 'b' : 'w');
+    }
+
+    function applyMoveOnBoard(state, m) {
+      const b = state.board;
+      const piece = b[m.from.r][m.from.c];
+      const target = b[m.to.r][m.to.c];
+
+      if (piece.toLowerCase() === 'p' || target) state.halfmove = 0;
+      else state.halfmove += 1;
+
+      if (piece.toLowerCase() === 'p' && m.to.c !== m.from.c && !target) {
+        const capR = m.from.r;
+        b[capR][m.to.c] = '';
+      }
+
+      b[m.to.r][m.to.c] = piece;
+      b[m.from.r][m.from.c] = '';
+
+      if (piece === 'K') { state.castling.K = false; state.castling.Q = false; }
+      if (piece === 'k') { state.castling.k = false; state.castling.q = false; }
+      if (piece === 'R' && m.from.r === 7 && m.from.c === 0) state.castling.Q = false;
+      if (piece === 'R' && m.from.r === 7 && m.from.c === 7) state.castling.K = false;
+      if (piece === 'r' && m.from.r === 0 && m.from.c === 0) state.castling.q = false;
+      if (piece === 'r' && m.from.r === 0 && m.from.c === 7) state.castling.k = false;
+      if (target === 'R' && m.to.r === 7 && m.to.c === 0) state.castling.Q = false;
+      if (target === 'R' && m.to.r === 7 && m.to.c === 7) state.castling.K = false;
+      if (target === 'r' && m.to.r === 0 && m.to.c === 0) state.castling.q = false;
+      if (target === 'r' && m.to.r === 0 && m.to.c === 7) state.castling.k = false;
+
+      if (piece.toLowerCase() === 'k' && Math.abs(m.to.c - m.from.c) === 2) {
+        if (m.to.c === 6) {
+          b[m.to.r][5] = b[m.to.r][7];
+          b[m.to.r][7] = '';
+        } else {
+          b[m.to.r][3] = b[m.to.r][0];
+          b[m.to.r][0] = '';
+        }
+      }
+
+      if (piece === 'P' && m.to.r === 0) b[m.to.r][m.to.c] = 'Q';
+      if (piece === 'p' && m.to.r === 7) b[m.to.r][m.to.c] = 'q';
+
+      if (piece.toLowerCase() === 'p' && Math.abs(m.to.r - m.from.r) === 2) {
+        state.ep = coordsToSquare((m.to.r + m.from.r) / 2, m.from.c);
+      } else {
+        state.ep = '-';
+      }
+
+      if (state.turn === 'b') state.fullmove += 1;
+      state.turn = state.turn === 'w' ? 'b' : 'w';
+    }
+
+    function pseudoMovesFor(board, r, c, state) {
+      const piece = board[r][c];
+      if (!piece) return [];
+      const color = pieceColor(piece);
+      const enemy = color === 'w' ? 'b' : 'w';
+      const lower = piece.toLowerCase();
+      const moves = [];
+
+      if (lower === 'p') {
+        const dir = color === 'w' ? -1 : 1;
+        const startRank = color === 'w' ? 6 : 1;
+        const one = r + dir;
+        if (inBounds(one,c) && !board[one][c]) {
+          moves.push({ from:{r,c}, to:{r:one,c} });
+          const two = r + dir * 2;
+          if (r === startRank && !board[two][c]) moves.push({ from:{r,c}, to:{r:two,c} });
+        }
+        for (const dc of [-1,1]) {
+          const tr = r + dir, tc = c + dc;
+          if (!inBounds(tr,tc)) continue;
+          const t = board[tr][tc];
+          if (t && pieceColor(t) === enemy) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+        }
+        const epC = squareToCoords(state.ep);
+        if (epC && epC.r === r + dir && Math.abs(epC.c - c) === 1) {
+          moves.push({ from:{r,c}, to:{r:epC.r,c:epC.c} });
+        }
+      }
+
+      if (lower === 'n') {
+        const jumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+        for (const [dr,dc] of jumps) {
+          const tr = r + dr, tc = c + dc;
+          if (!inBounds(tr,tc)) continue;
+          const t = board[tr][tc];
+          if (!t || pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+        }
+      }
+
+      if (['b','r','q'].includes(lower)) {
+        const dirs = [];
+        if (['b','q'].includes(lower)) dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+        if (['r','q'].includes(lower)) dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+        for (const [dr,dc] of dirs) {
+          let tr = r + dr, tc = c + dc;
+          while (inBounds(tr,tc)) {
+            const t = board[tr][tc];
+            if (!t) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+            else {
+              if (pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+              break;
+            }
+            tr += dr; tc += dc;
+          }
+        }
+      }
+
+      if (lower === 'k') {
+        for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const tr = r + dr, tc = c + dc;
+          if (!inBounds(tr,tc)) continue;
+          const t = board[tr][tc];
+          if (!t || pieceColor(t) !== color) moves.push({ from:{r,c}, to:{r:tr,c:tc} });
+        }
+
+        const homeRank = color === 'w' ? 7 : 0;
+        const enemyColor = color === 'w' ? 'b' : 'w';
+        if (r === homeRank && c === 4 && !inCheck(board, color)) {
+          const kFlag = color === 'w' ? 'K' : 'k';
+          const qFlag = color === 'w' ? 'Q' : 'q';
+          if (state.castling[kFlag] && !board[homeRank][5] && !board[homeRank][6]) {
+            if (!isSquareAttacked(board, homeRank, 5, enemyColor) && !isSquareAttacked(board, homeRank, 6, enemyColor)) {
+              moves.push({ from:{r,c}, to:{r:homeRank,c:6} });
+            }
+          }
+          if (state.castling[qFlag] && !board[homeRank][1] && !board[homeRank][2] && !board[homeRank][3]) {
+            if (!isSquareAttacked(board, homeRank, 3, enemyColor) && !isSquareAttacked(board, homeRank, 2, enemyColor)) {
+              moves.push({ from:{r,c}, to:{r:homeRank,c:2} });
+            }
+          }
+        }
+      }
+      return moves;
+    }
+
+    function legalMovesFor(r, c) {
+      const piece = S.board[r][c];
+      if (!piece || pieceColor(piece) !== S.turn) return [];
+      const pseudos = pseudoMovesFor(S.board, r, c, S);
+      return pseudos.filter((m) => {
+        const test = JSON.parse(JSON.stringify({
+          board: S.board,
+          turn: S.turn,
+          castling: S.castling,
+          ep: S.ep,
+          halfmove: S.halfmove,
+          fullmove: S.fullmove
+        }));
+        applyMoveOnBoard(test, m);
+        return !inCheck(test.board, S.turn);
+      });
+    }
+
+    function makeMove(m) {
+      S.history.push(cloneState());
+      applyMoveOnBoard(S, m);
+      selection = null;
+      legalForSelection = [];
+      render();
+    }
+
+    function handleSquareClick(r, c) {
+      const piece = S.board[r][c];
+      if (selection) {
+        const found = legalForSelection.find((m) => m.to.r === r && m.to.c === c);
+        if (found) { makeMove(found); return; }
+      }
+      if (piece && pieceColor(piece) === S.turn) {
+        selection = { r, c };
+        legalForSelection = legalMovesFor(r, c);
+      } else {
+        selection = null;
+        legalForSelection = [];
+      }
+      render();
+    }
+
+    function loadFEN(fenString) {
+      try {
+        const trimmed = fenString.trim();
+        if (!trimmed) throw new Error('FEN is empty.');
+        const parts = trimmed.split(/\s+/);
+        let adjusted = trimmed;
+        if (parts.length === 4) adjusted = `${trimmed} 0 1`;
+        else if (parts.length < 4) throw new Error('Please provide at least 4 FEN fields.');
+
+        const parsed = parseFEN(adjusted);
+        S.board = parsed.board;
+        S.turn = parsed.turn;
+        S.castling = parsed.castling;
+        S.ep = parsed.ep;
+        S.halfmove = parsed.halfmove;
+        S.fullmove = parsed.fullmove;
+        S.history = [];
+        selection = null;
+        legalForSelection = [];
+        render();
+      } catch (err) {
+        alert(`Could not load FEN: ${err.message}`);
+      }
+    }
+
+    async function copyCurrentFEN() {
+      const fen = boardToFEN();
+      fenInputEl.value = fen;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(fen);
+        }
+      } catch (_) {
+        // no-op: keep value in textarea even when clipboard is unavailable.
+      }
+    }
+
+    function displayLesson(lesson) {
+      lessonBoxEl.innerHTML = `<strong>${lesson.name}</strong><br>${lesson.goal}<br>${lesson.hint}`;
+    }
+
+    function loadSampleLesson() {
+      const lesson = LESSONS[0];
+      if (!lesson) return;
+      fenInputEl.value = lesson.fen;
+      loadFEN(lesson.fen);
+      displayLesson(lesson);
+      alert(`${lesson.name}\n\n${lesson.goal}\n${lesson.hint}`);
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      const checkSq = kingSquare(S.board, S.turn);
+      const inChk = inCheck(S.board, S.turn);
+      for (let vr = 0; vr < 8; vr++) {
+        for (let vc = 0; vc < 8; vc++) {
+          const r = S.flipped ? 7 - vr : vr;
+          const c = S.flipped ? 7 - vc : vc;
+          const sq = document.createElement('div');
+          const isLight = (vr + vc) % 2 === 0;
+          sq.className = `sq ${isLight ? 'light' : 'dark'}`;
+          const p = S.board[r][c];
+          if (p) sq.textContent = PIECE_UNICODE[p] || p;
+
+          if (selection && selection.r === r && selection.c === c) sq.classList.add('selected');
+          const legal = legalForSelection.find((m) => m.to.r === r && m.to.c === c);
+          if (legal) {
+            sq.classList.add('legal');
+            if (S.board[r][c]) sq.classList.add('capture');
+          }
+          if (inChk && checkSq && checkSq.r === r && checkSq.c === c) sq.classList.add('check');
+
+          const showRank = vc === 0;
+          const showFile = vr === 7;
+          if (showRank) {
+            const rank = document.createElement('span');
+            rank.className = 'coord rank-label';
+            rank.textContent = String(8 - r);
+            sq.appendChild(rank);
+          }
+          if (showFile) {
+            const file = document.createElement('span');
+            file.className = 'coord file-label';
+            file.textContent = FILES[c];
+            sq.appendChild(file);
+          }
+
+          sq.addEventListener('click', () => handleSquareClick(r, c));
+          boardEl.appendChild(sq);
+        }
+      }
+
+      const castling = ['K','Q','k','q'].filter((k) => S.castling[k]).join('') || '-';
+      statusEl.textContent = `${S.turn === 'w' ? 'White' : 'Black'} to move • Castling: ${castling} • EP: ${S.ep}`;
+      fenInputEl.value = boardToFEN();
+    }
+
+    document.getElementById('undoBtn').addEventListener('click', () => {
+      if (!S.history.length) return;
+      const prev = S.history.pop();
+      restoreState(prev);
+    });
+
+    document.getElementById('flipBtn').addEventListener('click', () => {
+      S.flipped = !S.flipped;
+      render();
+    });
+
+    document.getElementById('loadFenBtn').addEventListener('click', () => loadFEN(fenInputEl.value));
+    document.getElementById('copyFenBtn').addEventListener('click', copyCurrentFEN);
+    document.getElementById('sampleLessonBtn').addEventListener('click', loadSampleLesson);
+
+    loadFEN(START_FEN);
+    displayLesson({ name: 'Tip', goal: 'Load a lesson to see teaching text.', hint: 'Use Load Sample Lesson.' });
+  </script>
+</body>
+</html>
