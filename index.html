@@ -29,14 +29,52 @@
       gap: 18px;
       align-items: start;
     }
-    .board-wrap { position: relative; }
+    .board-wrap {
+      display: grid;
+      grid-template-columns: 22px auto 22px;
+      grid-template-rows: 22px auto 22px;
+      align-items: center;
+      justify-items: center;
+      background: #1b1b1c;
+      border: 1px solid #363638;
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35);
+    }
     #board {
+      grid-column: 2;
+      grid-row: 2;
       display: grid;
       grid-template-columns: repeat(8, 68px);
       grid-template-rows: repeat(8, 68px);
       border: 2px solid #333;
-      box-shadow: 0 8px 30px rgba(0,0,0,.35);
     }
+    .coords-strip {
+      display: grid;
+      color: #c7c7c7;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      user-select: none;
+    }
+    .coords-top,
+    .coords-bottom {
+      width: 544px;
+      grid-template-columns: repeat(8, 68px);
+      text-align: center;
+    }
+    .coords-top { grid-column: 2; grid-row: 1; }
+    .coords-bottom { grid-column: 2; grid-row: 3; }
+    .coords-left,
+    .coords-right {
+      height: 544px;
+      grid-template-rows: repeat(8, 68px);
+      align-items: center;
+      text-align: center;
+      width: 22px;
+    }
+    .coords-left { grid-column: 1; grid-row: 2; }
+    .coords-right { grid-column: 3; grid-row: 2; }
     .sq {
       position: relative;
       width: 68px;
@@ -47,7 +85,11 @@
       font-size: 44px;
       cursor: pointer;
       user-select: none;
+      color: #181818;
+      text-shadow: 0 1px 0 rgba(255,255,255,.25);
     }
+    .piece-white { color: #131313; }
+    .piece-black { color: #131313; opacity: .88; }
     .light { background: var(--light); }
     .dark { background: var(--dark); }
     .selected { outline: 3px solid #55f; outline-offset: -3px; }
@@ -67,15 +109,6 @@
       border-radius: 50%;
     }
     .check { box-shadow: inset 0 0 0 5px rgba(255,0,0,.65); }
-    .coord {
-      position: absolute;
-      font-size: 12px;
-      opacity: .85;
-      font-weight: 600;
-      pointer-events: none;
-    }
-    .file-label { right: 4px; bottom: 2px; }
-    .rank-label { left: 4px; top: 2px; }
     .panel {
       background: var(--panel);
       border: 1px solid #2b2b2b;
@@ -125,7 +158,11 @@
 <body>
   <div class="app">
     <div class="board-wrap">
+      <div id="coordsTop" class="coords-strip coords-top"></div>
+      <div id="coordsLeft" class="coords-strip coords-left"></div>
       <div id="board" aria-label="Chess board"></div>
+      <div id="coordsRight" class="coords-strip coords-right"></div>
+      <div id="coordsBottom" class="coords-strip coords-bottom"></div>
     </div>
     <aside class="panel">
       <h2>Teaching Board</h2>
@@ -182,6 +219,10 @@
     const statusEl = document.getElementById('status');
     const fenInputEl = document.getElementById('fenInput');
     const lessonBoxEl = document.getElementById('lessonBox');
+    const coordsTopEl = document.getElementById('coordsTop');
+    const coordsLeftEl = document.getElementById('coordsLeft');
+    const coordsRightEl = document.getElementById('coordsRight');
+    const coordsBottomEl = document.getElementById('coordsBottom');
 
     function createEmptyBoard() {
       return Array.from({ length: 8 }, () => Array(8).fill(''));
@@ -567,8 +608,19 @@
       alert(`${lesson.name}\n\n${lesson.goal}\n${lesson.hint}`);
     }
 
+    function renderCoordinateFrame() {
+      const files = S.flipped ? [...FILES].reverse() : [...FILES];
+      const ranks = S.flipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+
+      coordsTopEl.innerHTML = files.map((f) => `<span>${f}</span>`).join('');
+      coordsBottomEl.innerHTML = files.map((f) => `<span>${f}</span>`).join('');
+      coordsLeftEl.innerHTML = ranks.map((r) => `<span>${r}</span>`).join('');
+      coordsRightEl.innerHTML = ranks.map((r) => `<span>${r}</span>`).join('');
+    }
+
     function render() {
       boardEl.innerHTML = '';
+      renderCoordinateFrame();
       const checkSq = kingSquare(S.board, S.turn);
       const inChk = inCheck(S.board, S.turn);
       for (let vr = 0; vr < 8; vr++) {
@@ -579,7 +631,10 @@
           const isLight = (vr + vc) % 2 === 0;
           sq.className = `sq ${isLight ? 'light' : 'dark'}`;
           const p = S.board[r][c];
-          if (p) sq.textContent = PIECE_UNICODE[p] || p;
+          if (p) {
+            sq.textContent = PIECE_UNICODE[p] || p;
+            sq.classList.add(pieceColor(p) === 'w' ? 'piece-white' : 'piece-black');
+          }
 
           if (selection && selection.r === r && selection.c === c) sq.classList.add('selected');
           const legal = legalForSelection.find((m) => m.to.r === r && m.to.c === c);
@@ -589,20 +644,6 @@
           }
           if (inChk && checkSq && checkSq.r === r && checkSq.c === c) sq.classList.add('check');
 
-          const showRank = vc === 0;
-          const showFile = vr === 7;
-          if (showRank) {
-            const rank = document.createElement('span');
-            rank.className = 'coord rank-label';
-            rank.textContent = String(8 - r);
-            sq.appendChild(rank);
-          }
-          if (showFile) {
-            const file = document.createElement('span');
-            file.className = 'coord file-label';
-            file.textContent = FILES[c];
-            sq.appendChild(file);
-          }
 
           sq.addEventListener('click', () => handleSquareClick(r, c));
           boardEl.appendChild(sq);
